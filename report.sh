@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC1004,SC2236
+# shellcheck disable=SC1004,SC2236,SC2001
 
 #set -euxo pipefail
 
@@ -2278,6 +2278,7 @@ messageid="$(dbus-uuidgen)"
 if [ "${systemType}" = "BSD" ]; then
 	localDriveList="$(sysctl -n kern.disks | sed -e 's:nvd:nvme:g')"
 else
+	# shellcheck disable=SC2010
 	localDriveList="$(ls -l "/sys/block" | grep -v 'devices/virtual' | sed -e 's:[[:blank:]]\{1,\}: :g' | cut -d ' ' -f "9" | sed -e 's:n[0-9]\{1,\}$::g' | uniq )"
 	# lsblk -n -l -o NAME -E PKNAME | tr '\n' ' '
 fi
