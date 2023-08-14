@@ -1677,6 +1677,8 @@ function SASSummary () {
 
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Non-medium<br>Errors</th>
 
+			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Wear<br>Leveling<br>Count</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Age (days)</th>
 
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th>
@@ -1943,6 +1945,20 @@ EOF
 				local temp="${temp}&deg;C"
 			fi
 
+			# Colorize Wear Leveling
+			if [ ! -z "${wearLeveling}" ]; then
+				if [ "${wearLeveling}" -le "${lifeRemainCrit}" ]; then
+					local wearLevelingColor="${critColor}"
+				elif [ "${wearLeveling}" -le "${lifeRemainWarn}" ]; then
+					local wearLevelingColor="${warnColor}"
+				else
+					local wearLevelingColor="${bgColor}"
+				fi
+				wearLeveling="${wearLeveling}%"
+			else
+				local wearLevelingColor="${bgColor}"
+			fi
+
 			# Colorize scsi Grown Defect List Errors
 			if [ "${scsiGrownDefectList:-"0"}" -gt "${sectorsCrit}" ]; then
 				local scsiGrownDefectListColor="${critColor}"
@@ -2013,6 +2029,8 @@ EOF
 					<td style="text-align:center; background-color:${uncorrectedVerifyErrorsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${uncorrectedVerifyErrors:-"N/A"}</td>
 
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${nonMediumErrors:-"N/A"}</td>
+
+					<td style="text-align:center; background-color:${wearLevelingColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${wearLeveling:-N/A}</td>
 
 					<td style="text-align:center; background-color:${testAgeColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${testAge:-"N/A"}</td>
 
