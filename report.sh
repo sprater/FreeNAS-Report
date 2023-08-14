@@ -593,8 +593,9 @@ function NVMeSummary () {
 
 			  <th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Age (days)</th> <!-- Last Test Age (days) -->
 
-			  <th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th></tr> <!-- Last Test Type -->
+			  <th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th> <!-- Last Test Type -->
 
+			</tr>
 			</tr>
 EOF
 	} >> "${logfile}"
@@ -819,21 +820,37 @@ EOF
 				tee <<- EOF
 					<tr style="background-color:${bgColor};">
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">/dev/${drive}</td> <!-- device -->
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${model}</td> <!-- model -->
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${serial}</td> <!-- serial -->
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${capacity}</td> <!-- capacity -->
+
 					<td style="text-align:center; background-color:${smartStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${smartStatus}</td> <!-- smartStatusColor, smartStatus -->
+
 					<td style="text-align:center; background-color:${tempColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${temp}</td> <!-- tempColor, temp -->
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${onTime}</td> <!-- onTime -->
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${startStop}</td> <!-- startStop -->
+
 					<td style="text-align:center; background-color:${mediaErrorsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${mediaErrors}</td> <!-- mediaErrorsColor, mediaErrors -->
+
 					<td style="text-align:center; background-color:${errorsLogsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${errorsLogs}</td> <!-- errorsLogsColor, errorsLogs -->
+
 					<td style="text-align:center; background-color:${critWarningColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${critWarning}</td> <!-- critWarningColor, critWarning -->
+
 					<td style="text-align:center; background-color:${wearLevelingColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${wearLeveling}</td> <!-- wearLevelingColor, wearLeveling -->
+
 					<td style="text-align:center; background-color:${totalBWColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${totalBW}</td> <!-- totalBWColor, totalBW -->
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${bwPerDay}</td> <!-- bwPerDay -->
+
 					<td style="text-align:center; background-color:${testAgeColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">N/A</td> <!-- testAgeColor, testAge -->
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">N/A</td> <!-- lastTestType -->
+
 					</tr>
 EOF
 			} >> "${logfile}"
@@ -857,23 +874,42 @@ function SSDSummary () {
 			<tr><th colspan="18" style="text-align:center; font-size:20px; height:40px; font-family:courier;">SSD SMART Status Report Summary</th></tr>
 			<tr>
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Device</th>
+
 			<th style="text-align:center; width:130px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Model</th>
+
 			<th style="text-align:center; width:130px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Serial<br>Number</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Capacity</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">SMART<br>Status</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Temp</th>
+
 			<th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Power-On<br>Time<br>(${powerTimeFormat})</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Power<br>Cycle<br>Count</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Realloc<br>Sectors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Program<br>Fail<br>Count</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Erase<br>Fail<br>Count</th>
+
 			<th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Offline<br>Uncorrectable<br>Sectors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">CRC<br>Errors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Wear<br>Leveling<br>Count</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Total<br>Bytes<br>Written</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Bytes Written<br>(per Day)</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Age (days)</th>
-			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th></tr>
+
+			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th>
+
+			</tr>
 			</tr>
 EOF
 	} >> "${logfile}"
@@ -1186,23 +1222,41 @@ EOF
 				tee <<- EOF
 					<tr style="background-color:${bgColor};">
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">/dev/${device}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${model}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${serial}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${capacity}</td>
+
 					<td style="text-align:center; background-color:${smartStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${smartStatus}</td>
+
 					<td style="text-align:center; background-color:${tempColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${temp}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${onTime}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${startStop}</td>
+
 					<td style="text-align:center; background-color:${reAllocColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${reAlloc:-N/A}</td>
+
 					<td style="text-align:center; background-color:${progFailColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${progFail:-N/A}</td>
+
 					<td style="text-align:center; background-color:${eraseFailColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${eraseFail:-N/A}</td>
+
 					<td style="text-align:center; background-color:${offlineUncColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${offlineUnc:-N/A}</td>
+
 					<td style="text-align:center; background-color:${crcErrorsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${crcErrors:-N/A}</td>
+
 					<td style="text-align:center; background-color:${wearLevelingColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${wearLeveling:-N/A}%</td>
+
 					<td style="text-align:center; background-color:${totalBWColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${totalBW}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${bwPerDay}</td>
+
 					<td style="text-align:center; background-color:${testAgeColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${testAge:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${lastTestStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${lastTestType:-"N/A"}</td>
+
 					</tr>
 EOF
 			} >> "${logfile}"
@@ -1226,23 +1280,42 @@ function HDDSummary () {
 			<tr><th colspan="18" style="text-align:center; font-size:20px; height:40px; font-family:courier;">HDD SMART Status Report Summary</th></tr>
 			<tr>
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Device</th>
+
 			<th style="text-align:center; width:130px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Model</th>
+
 			<th style="text-align:center; width:130px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Serial<br>Number</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">RPM</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Capacity</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">SMART<br>Status</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Temp</th>
+
 			<th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Power-On<br>Time<br>(${powerTimeFormat})</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Start<br>Stop<br>Count</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Spin<br>Retry<br>Count</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Realloc<br>Sectors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Realloc<br>Events</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Current<br>Pending<br>Sectors</th>
+
 			<th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Offline<br>Uncorrectable<br>Sectors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">CRC<br>Errors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Seek<br>Error<br>Health</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Age (days)</th>
-			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th></tr>
+
+			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th>
+
+			</tr>
 			</tr>
 EOF
 	} >> "${logfile}"
@@ -1516,23 +1589,41 @@ EOF
 				tee <<- EOF
 					<tr style="background-color:${bgColor};">
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">/dev/${device}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${model}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${serial}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${rpm}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${capacity}</td>
+
 					<td style="text-align:center; background-color:${smartStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${smartStatus}</td>
+
 					<td style="text-align:center; background-color:${tempColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${temp}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${onTime}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${startStop}</td>
+
 					<td style="text-align:center; background-color:${spinRetryColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${spinRetry}</td>
+
 					<td style="text-align:center; background-color:${reAllocColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${reAlloc}</td>
+
 					<td style="text-align:center; background-color:${reAllocEventColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${reAllocEvent}</td>
+
 					<td style="text-align:center; background-color:${pendingColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${pending}</td>
+
 					<td style="text-align:center; background-color:${offlineUncColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${offlineUnc}</td>
+
 					<td style="text-align:center; background-color:${crcErrorsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${crcErrors}</td>
+
 					<td style="text-align:center; background-color:${seekErrorHealthColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${seekErrorHealth}%</td>
+
 					<td style="text-align:center; background-color:${testAgeColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${testAge:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${lastTestStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${lastTestType:-"N/A"}</td>
+
 					</tr>
 EOF
 			} >> "${logfile}"
@@ -1557,22 +1648,40 @@ function SASSummary () {
 			<tr><th colspan="18" style="text-align:center; font-size:20px; height:40px; font-family:courier;">SAS SMART Status Report Summary</th></tr>
 			<tr>
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Device</th>
+
 			<th style="text-align:center; width:130px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Model</th>
+
 			<th style="text-align:center; width:130px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Serial<br>Number</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">RPM</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Capacity</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">SMART<br>Status</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Temp</th>
+
 			<th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Power-On<br>Time<br>(${powerTimeFormat})</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Start<br>Stop<br>Cycles</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Load<br>Unload<br>Cycles</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Grown<br>Defect<br>List</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Uncorrected<br>Read<br>Errors</th>
+
 			<th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Uncorrected<br>Write<br>Errors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Uncorrected<br>Verify<br>Errors</th>
+
 			<th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Non-medium<br>Errors</th>
+
 			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Age (days)</th>
-			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th></tr>
+
+			<th style="text-align:center; width:100px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Last Test<br>Type</th>
+
+			</tr>
 			</tr>
 EOF
 	} >> "${logfile}"
@@ -1870,22 +1979,39 @@ EOF
 				tee <<- EOF
 					<tr style="background-color:${bgColor};">
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">/dev/${device}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${model}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${serial}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${rpm}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${capacity}</td>
+
 					<td style="text-align:center; background-color:${smartStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${smartStatus:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${tempColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${temp}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${onTime}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${accumStartStopCycles:-"N/A"}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${accumLoadUnloadCycles:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${scsiGrownDefectListColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${scsiGrownDefectList:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${uncorrectedReadErrorsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${uncorrectedReadErrors:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${uncorrectedWriteErrorsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${uncorrectedWriteErrors:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${uncorrectedVerifyErrorsColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${uncorrectedVerifyErrors:-"N/A"}</td>
+
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${nonMediumErrors:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${testAgeColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${testAge:-"N/A"}</td>
+
 					<td style="text-align:center; background-color:${lastTestStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${lastTestType:-"N/A"}</td>
+
 					</tr>
 EOF
 			} >> "${logfile}"
