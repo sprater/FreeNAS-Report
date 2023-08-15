@@ -612,7 +612,11 @@ EOF
 			# Finally, print the HTML code for the current row of the table with all the gathered data.
 
 			# Get drive attributes
-			local nvmeSmarOut="$(smartctl -AHij "/dev/${drive}")"
+			if [ "${smartctl_vers_74_plus}" = "true" ]; then
+				local nvmeSmarOut="$(smartctl -AxHij --log="error" --log="selftest" "/dev/${drive}")"
+			else
+				local nvmeSmarOut="$(smartctl -AxHij "/dev/${drive}")"
+			fi
 
 			local model="$(jq -Mre '.model_name | values' <<< "${nvmeSmarOut}")"
 			local serial="$(jq -Mre '.serial_number | values' <<< "${nvmeSmarOut}")"
@@ -917,7 +921,12 @@ EOF
 	local drive
 	local altRow="false"
 	for drive in "${drives[@]}"; do
-		local ssdInfoSmrt="$(smartctl -AHijl xselftest,selftest --log="devstat" "/dev/${drive}")"
+		if [ "${smartctl_vers_74_plus}" = "true" ]; then
+			local ssdInfoSmrt="$(smartctl -AxHij --log="xerror,error" --log="xselftest,selftest" --log="devstat" --log="ssd" --log="farm" "/dev/${drive}")"
+		else
+			local ssdInfoSmrt="$(smartctl -AxHij --log="xerror,error" --log="xselftest,selftest" --log="devstat" --log="ssd" "/dev/${drive}")"
+		fi
+
 		local rotTst="$(jq -Mre '.rotation_rate | values' <<< "${ssdInfoSmrt}")"
 		local scsiTst="$(jq -Mre '.device.type | values' <<< "${ssdInfoSmrt}")"
 		if [ "${rotTst}" = "0" ] && [ ! "${scsiTst}" = "scsi" ]; then
@@ -1323,7 +1332,12 @@ EOF
 	local drive
 	local altRow="false"
 	for drive in "${drives[@]}"; do
-		local hddInfoSmrt="$(smartctl -AHijl xselftest,selftest "/dev/${drive}")"
+		if [ "${smartctl_vers_74_plus}" = "true" ]; then
+			local hddInfoSmrt="$(smartctl -AxHij --log="xerror,error" --log="xselftest,selftest" --log="devstat" --log="farm" "/dev/${drive}")"
+		else
+			local hddInfoSmrt="$(smartctl -AxHij --log="xerror,error" --log="xselftest,selftest" --log="devstat" "/dev/${drive}")"
+		fi
+
 		local rotTst="$(jq -Mre '.rotation_rate | values' <<< "${hddInfoSmrt}")"
 		local scsiTst="$(jq -Mre '.device.type | values' <<< "${hddInfoSmrt}")"
 		if [ -z "${rotTst}" ] && [ ! -z "$(jq -Mre '.ata_smart_attributes.table[]? | select(.name == "Spin_Up_Time") | .id | values' <<< "${hddInfoSmrt}")" ]; then
@@ -1691,8 +1705,14 @@ EOF
 	local drive
 	local altRow="false"
 	for drive in "${drives[@]}"; do
-		local sasInfoSmrt="$(smartctl -AHijl xselftest,selftest "/dev/${drive}")"
-		local nonJsonSasInfoSmrt="$(smartctl -Al error -l xselftest,selftest "/dev/${drive}")"
+		if [ "${smartctl_vers_74_plus}" = "true" ]; then
+			local sasInfoSmrt="$(smartctl -AxHij --log="error" --log="selftest" --log="background" --log="ssd" --log="defects" --log="envrep" --log="genstats" --log="zdevstat" --log="farm" "/dev/${drive}")"
+			local nonJsonSasInfoSmrt="$(smartctl -AxHi --log="error" --log="selftest" --log="background" --log="ssd" --log="defects" --log="envrep" --log="genstats" --log="zdevstat" --log="farm" "/dev/${drive}")"
+		else
+			local sasInfoSmrt="$(smartctl -AxHij --log="error" --log="selftest" --log="background" --log="ssd" "/dev/${drive}")"
+			local nonJsonSasInfoSmrt="$(smartctl -AxHi --log="error" --log="selftest" --log="background" --log="ssd" "/dev/${drive}")"
+		fi
+
 		local rotTst="$(jq -Mre '.device.type | values' <<< "${sasInfoSmrt}")"
 		if [ "${rotTst}" = "scsi" ]; then
 			# For each drive detected, run "smartctl -AHijl xselftest,selftest" and parse its output.
@@ -2132,8 +2152,13 @@ function DumpFiles () {
 	# Dump drive data
 	{
 		for drive in "${drives[@]}"; do
-			infoSmrtJson="$(smartctl -AHijl xselftest,selftest --log="devstat" --quietmode=noserial "/dev/${drive}")"
-			infoSmrt="$(smartctl -AHil error -l xselftest,selftest --log="devstat" --quietmode=noserial "/dev/${drive}")"
+			if [ "${smartctl_vers_74_plus}" = "true" ]; then
+				infoSmrtJson="$(smartctl -AxHij --log="xerror,error" --log="xselftest,selftest" --log="devstat" --log="farm" --log="envrep" --log="defects" --log="zdevstat" --log="genstats" --log="ssd" --log="background" --quietmode=noserial "/dev/${drive}")"
+				infoSmrt="$(smartctl -AxHi --log="xerror,error" --log="xselftest,selftest" --log="devstat" --log="farm" --log="envrep" --log="defects" --log="zdevstat" --log="genstats" --log="ssd" --log="background" --quietmode=noserial "/dev/${drive}")"
+			else
+				infoSmrtJson="$(smartctl -AxHij --log="xerror,error" --log="xselftest,selftest" --log="devstat" --log="defects" --log="ssd" --quietmode=noserial "/dev/${drive}")"
+				infoSmrt="$(smartctl -AxHi --log="xerror,error" --log="xselftest,selftest" --log="devstat" --log="defects" --log="ssd" --quietmode=noserial "/dev/${drive}")"
+			fi
 
 			echo "${infoSmrtJson}" > "${dumpPath}${drive}.json.txt"
 			echo "${infoSmrt}" > "${dumpPath}${drive}.txt"
@@ -2269,6 +2294,19 @@ done
 # Do not run if the config file has not been edited.
 if [ ! "${defaultFile}" = "0" ]; then
 	echo "Please edit the config file for your setup" >&2
+	exit 1
+fi
+
+# Get the version numbers for smartctl
+major_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '1p;d')"
+minor_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '2p;d')"
+if [[ "${major_smartctl_vers}" -gt "7" ]]; then
+	smartctl_vers_74_plus="true"
+elif [[ "${major_smartctl_vers}" -eq "7" ]] && [[ "${minor_smartctl_vers}" -ge "4" ]]; then
+	smartctl_vers_74_plus="true"
+elif [ -z "${major_smartctl_vers}" ]; then
+	echo "smartctl version 7 or greater is required" >&2
+	smartctl -V
 	exit 1
 fi
 
@@ -2498,8 +2536,13 @@ for drive in "${drives[@]}"; do
 			echo '<b>########## SMART status report for '"${drive}"' drive ('"${brand}: ${serial}"') ##########</b>'
 			smartctl -H -A -l error "/dev/${drive}"
 			# FixMe: bsd only; still waiting on suport for nvme tests in smartctl
-			if [ "${systemType}" = "BSD" ]; then
+			if [ "${systemType}" = "BSD" ] && [ ! "${smartctl_vers_74_plus}" = "true" ]; then
 				nvmecontrol logpage -p 0x06 "${drive}" | grep '\['
+			elif [ "${smartctl_vers_74_plus}" = "true" ]; then
+				grep 'Num' <<< "${smartTestOut}" | cut -c6- | head -1
+				grep 'Extended' <<< "${smartTestOut}" | cut -c6- | head -1
+				grep 'Short' <<< "${smartTestOut}" | cut -c6- | head -1
+				grep 'Conveyance' <<< "${smartTestOut}" | cut -c6- | head -1
 			fi
 			echo '<br><br>'
 		} >> "${logfile}"
