@@ -42,6 +42,10 @@ Once you have updated the config file, click `Run Now` again to generate your fi
 
 **Changelog**
 
+*v1.8.1*
+  - With smartctl 7.4+ use the new features.
+  - Add a wear leveling stat to the SAS table for SAS SSDs.
+
 *v1.8*  (dak180)
   - Accommodate both SSD and HDD temp settings
   - Keep SAS drives in their own section

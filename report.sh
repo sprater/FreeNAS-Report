@@ -15,6 +15,9 @@
 ### https://github.com/dak180/FreeNAS-Report
 
 ### Changelog:
+# v1.8.1
+#   - With smartctl 7.4+ use the new features.
+#   - Add a wear leveling stat to the SAS table for SAS SSDs.
 # v1.8
 #   - Accommodate both SSD and HDD temp settings
 #   - Keep SAS drives in their own section
