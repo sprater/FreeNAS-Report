@@ -306,7 +306,7 @@ EOF
 		# Total all read, write, and checksum errors per pool
 		errors="$(zpool status "${pool}" | grep -E "(ONLINE|DEGRADED|FAULTED|UNAVAIL|REMOVED)[ \\t]+[0-9]+" | tr -s '[:blank:]' ' ')"
 		readErrors="0"
-		for err in $(cut -d ' ' -f "4" <<< "${errors}"); do
+		for err in $(echo "${errors}" | cut -d ' ' -f "4"); do
 			if grep -E -q "[^0-9]+" <<< "${err}"; then
 				# Assume a non number value is > 1000
 				readErrors="1000"
@@ -315,7 +315,7 @@ EOF
 			readErrors="$((readErrors + err))"
 		done
 		writeErrors="0"
-		for err in $(cut -d ' ' -f "5" <<< "${errors}"); do
+		for err in $(echo "${errors}" | cut -d ' ' -f "5"); do
 			if grep -E -q "[^0-9]+" <<< "${err}"; then
 				# Assume a non number value is > 1000
 				writeErrors="1000"
@@ -324,7 +324,7 @@ EOF
 			writeErrors="$((writeErrors + err))"
 		done
 		cksumErrors="0"
-		for err in $(cut -d ' ' -f "6" <<< "${errors}"); do
+		for err in $(echo "${errors}" | cut -d ' ' -f "6"); do
 			if grep -E -q "[^0-9]+" <<< "${err}"; then
 				# Assume a non number value is > 1000
 				cksumErrors="1000"
@@ -517,7 +517,7 @@ EOF
 			scrubErrorsColor="${bgColor}"
 		fi
 
-		if [ "$(bc <<< "scale=0;($(sed -e 's:% done$::')+0)/1" <<< "${scrubAge}")" -gt "${scrubAgeWarn}" ]; then
+		if [ "$(bc <<< "scale=0;($(echo "${scrubAge}" | sed -e 's:% done$::')+0)/1")" -gt "${scrubAgeWarn}" ]; then
 			scrubAgeColor="${warnColor}"
 		else
 			scrubAgeColor="${bgColor}"
