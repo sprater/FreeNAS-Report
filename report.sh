@@ -306,8 +306,8 @@ EOF
 		# Total all read, write, and checksum errors per pool
 		errors="$(zpool status "${pool}" | grep -E "(ONLINE|DEGRADED|FAULTED|UNAVAIL|REMOVED)[ \\t]+[0-9]+" | tr -s '[:blank:]' ' ')"
 		readErrors="0"
-		for err in $(echo "${errors}" | cut -d ' ' -f "4"); do
-			if echo "${err}" | grep -E -q "[^0-9]+"; then
+		for err in $(cut -d ' ' -f "4" <<< "${errors}"); do
+			if grep -E -q "[^0-9]+" <<< "${err}"; then
 				# Assume a non number value is > 1000
 				readErrors="1000"
 				break
@@ -315,8 +315,8 @@ EOF
 			readErrors="$((readErrors + err))"
 		done
 		writeErrors="0"
-		for err in $(echo "${errors}" | cut -d ' ' -f "5"); do
-			if echo "${err}" | grep -E -q "[^0-9]+"; then
+		for err in $(cut -d ' ' -f "5" <<< "${errors}"); do
+			if grep -E -q "[^0-9]+" <<< "${err}"; then
 				# Assume a non number value is > 1000
 				writeErrors="1000"
 				break
@@ -324,8 +324,8 @@ EOF
 			writeErrors="$((writeErrors + err))"
 		done
 		cksumErrors="0"
-		for err in $(echo "${errors}" | cut -d ' ' -f "6"); do
-			if echo "${err}" | grep -E -q "[^0-9]+"; then
+		for err in $(cut -d ' ' -f "6" <<< "${errors}"); do
+			if grep -E -q "[^0-9]+" <<< "${err}"; then
 				# Assume a non number value is > 1000
 				cksumErrors="1000"
 				break
@@ -353,33 +353,33 @@ EOF
 		local scrubTime
 
 		statusOutput="$(zpool status "${pool}")"
-		statusOutputLine="$(echo "${statusOutput}" | grep "scan:" | sed -e 's:[[:blank:]]\{1,\}: :g' -e 's:^[[:blank:]]*::')"
+		statusOutputLine="$(grep "scan:" <<< "${statusOutput}" | sed -e 's:[[:blank:]]\{1,\}: :g' -e 's:^[[:blank:]]*::')"
 
 		# normal status i.e. scrub
-		if [ "$(echo "${statusOutputLine}" | cut -d ' ' -f "2,3")" = "scrub repaired" ]; then
+		if [ "$(cut -d ' ' -f "2,3" <<< "${statusOutputLine}")" = "scrub repaired" ]; then
 			{
-			multiDay="$(echo "${statusOutputLine}" | grep -c "days")"
-			scrubRepBytes="$(echo "${statusOutputLine}" | cut -d ' ' -f "4" | sed -e 's:B::')"
+			multiDay="$(grep -c "days" <<< "${statusOutputLine}")"
+			scrubRepBytes="$(cut -d ' ' -f "4" <<< "${statusOutputLine}" | sed -e 's:B::')"
 
 			# Convert time/datestamp format presented by zpool status, compare to current date, calculate scrub age
 			if [ "${multiDay}" -ge 1 ] ; then
 				# We should test the version of zfs because there still is no json output
-				scrubYear="$(echo "${statusOutputLine}" | cut -d ' ' -f "17")"
-				scrubMonth="$(echo "${statusOutputLine}" | cut -d ' ' -f "14")"
-				scrubDay="$(echo "${statusOutputLine}" | cut -d ' ' -f "15")"
-				scrubTime="$(echo "${statusOutputLine}" | cut -d ' ' -f "16")"
+				scrubYear="$(cut -d ' ' -f "17" <<< "${statusOutputLine}")"
+				scrubMonth="$(cut -d ' ' -f "14" <<< "${statusOutputLine}")"
+				scrubDay="$(cut -d ' ' -f "15" <<< "${statusOutputLine}")"
+				scrubTime="$(cut -d ' ' -f "16" <<< "${statusOutputLine}")"
 
-				scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "6-8")"
-				scrubErrors="$(echo "${statusOutputLine}" | cut -d ' ' -f "10")"
+				scrubDuration="$(cut -d ' ' -f "6-8" <<< "${statusOutputLine}")"
+				scrubErrors="$(cut -d ' ' -f "10" <<< "${statusOutputLine}")"
 			else
 				# We should test the version of zfs because there still is no json output
-				scrubYear="$(echo "${statusOutputLine}" | cut -d ' ' -f "15")"
-				scrubMonth="$(echo "${statusOutputLine}" | cut -d ' ' -f "12")"
-				scrubDay="$(echo "${statusOutputLine}" | cut -d ' ' -f "13")"
-				scrubTime="$(echo "${statusOutputLine}" | cut -d ' ' -f "14")"
+				scrubYear="$(cut -d ' ' -f "15" <<< "${statusOutputLine}")"
+				scrubMonth="$(cut -d ' ' -f "12" <<< "${statusOutputLine}")"
+				scrubDay="$(cut -d ' ' -f "13" <<< "${statusOutputLine}")"
+				scrubTime="$(cut -d ' ' -f "14" <<< "${statusOutputLine}")"
 
-				scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "6")"
-				scrubErrors="$(echo "${statusOutputLine}" | cut -d ' ' -f "8")"
+				scrubDuration="$(cut -d ' ' -f "6" <<< "${statusOutputLine}")"
+				scrubErrors="$(cut -d ' ' -f "8" <<< "${statusOutputLine}")"
 			fi
 			scrubDate="${scrubMonth} ${scrubDay} ${scrubYear} ${scrubTime}"
 
@@ -394,31 +394,31 @@ EOF
 			}
 
 		# if status is resilvered
-		elif [ "$(echo "${statusOutputLine}" | cut -d ' ' -f "2")" = "resilvered" ]; then
+		elif [ "$(cut -d ' ' -f "2" <<< "${statusOutputLine}")" = "resilvered" ]; then
 			{
 			resilver="<BR>Resilvered"
-			multiDay="$(echo "${statusOutput}" | grep "scan" | grep -c "days")"
-			scrubRepBytes="$(echo "${statusOutputLine}" | cut -d ' ' -f "3")"
+			multiDay="$(grep "scan" <<< "${statusOutput}" | grep -c "days")"
+			scrubRepBytes="$(cut -d ' ' -f "3" <<< "${statusOutputLine}")"
 
 			# Convert time/datestamp format presented by zpool status, compare to current date, calculate scrub age
 			if [ "${multiDay}" -ge "1" ] ; then
 				# We should test the version of zfs because there still is no json output
-				scrubYear="$(echo "${statusOutputLine}" | cut -d ' ' -f "16")"
-				scrubMonth="$(echo "${statusOutputLine}" | cut -d ' ' -f "13")"
-				scrubDay="$(echo "${statusOutputLine}" | cut -d ' ' -f "14")"
-				scrubTime="$(echo "${statusOutputLine}" | cut -d ' ' -f "15")"
+				scrubYear="$(cut -d ' ' -f "16" <<< "${statusOutputLine}")"
+				scrubMonth="$(cut -d ' ' -f "13" <<< "${statusOutputLine}")"
+				scrubDay="$(cut -d ' ' -f "14" <<< "${statusOutputLine}")"
+				scrubTime="$(cut -d ' ' -f "15" <<< "${statusOutputLine}")"
 
-				scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "5-7")"
-				scrubErrors="$(echo "${statusOutputLine}" | cut -d ' ' -f "9")"
+				scrubDuration="$(cut -d ' ' -f "5-7" <<< "${statusOutputLine}")"
+				scrubErrors="$(cut -d ' ' -f "9" <<< "${statusOutputLine}")"
 			else
 				# We should test the version of zfs because there still is no json output
-				scrubYear="$(echo "${statusOutputLine}" | cut -d ' ' -f "14")"
-				scrubMonth="$(echo "${statusOutputLine}" | cut -d ' ' -f "11")"
-				scrubDay="$(echo "${statusOutputLine}" | cut -d ' ' -f "12")"
-				scrubTime="$(echo "${statusOutputLine}" | cut -d ' ' -f "13")"
+				scrubYear="$(cut -d ' ' -f "14" <<< "${statusOutputLine}")"
+				scrubMonth="$(cut -d ' ' -f "11" <<< "${statusOutputLine}")"
+				scrubDay="$(cut -d ' ' -f "12" <<< "${statusOutputLine}")"
+				scrubTime="$(cut -d ' ' -f "13" <<< "${statusOutputLine}")"
 
-				scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "5")"
-				scrubErrors="$(echo "${statusOutputLine}" | cut -d ' ' -f "7")"
+				scrubDuration="$(cut -d ' ' -f "5" <<< "${statusOutputLine}")"
+				scrubErrors="$(cut -d ' ' -f "7" <<< "${statusOutputLine}")"
 			fi
 			scrubDate="${scrubMonth} ${scrubDay} ${scrubYear} ${scrubTime}"
 
@@ -433,32 +433,32 @@ EOF
 			}
 
 		# Check if resilver is in progress
-		elif [ "$(echo "${statusOutputLine}" | cut -d ' ' -f "2")" = "resilver" ]; then
+		elif [ "$(cut -d ' ' -f "2" <<< "${statusOutputLine}")" = "resilver" ]; then
 			{
 			scrubRepBytes="Resilver In Progress"
-			statusOutputLine="$(echo "${statusOutput}" | grep "resilvered," | sed -e 's:[[:blank:]]\{1,\}: :g' -e 's:^[[:blank:]]*::')"
+			statusOutputLine="$(grep "resilvered," <<< "${statusOutput}" | sed -e 's:[[:blank:]]\{1,\}: :g' -e 's:^[[:blank:]]*::')"
 
-			scrubAge="$(echo "${statusOutputLine}" | cut -d ' ' -f "3") done"
-			scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "5") <br> to go"
+			scrubAge="$(cut -d ' ' -f "3" <<< "${statusOutputLine}") done"
+			scrubDuration="$(cut -d ' ' -f "5" <<< "${statusOutputLine}") <br> to go"
 			}
 
 		# Check if scrub is in progress
-		elif [ "$(echo "${statusOutputLine}" | cut -d ' ' -f "4")" = "progress" ]; then
+		elif [ "$(cut -d ' ' -f "4" <<< "${statusOutputLine}")" = "progress" ]; then
 			{
 			scrubRepBytes="Scrub In Progress"
-			statusOutputLine="$(echo "${statusOutput}" | grep "repaired," | sed -e 's:[[:blank:]]\{1,\}: :g' -e 's:^[[:blank:]]*::')"
+			statusOutputLine="$(grep "repaired," <<< "${statusOutput}" | sed -e 's:[[:blank:]]\{1,\}: :g' -e 's:^[[:blank:]]*::')"
 
-			scrubErrors="$(echo "${statusOutputLine}" | cut -d ' ' -f "1") repaired"
-			scrubAge="$(echo "${statusOutputLine}" | cut -d ' ' -f "3") done"
+			scrubErrors="$(cut -d ' ' -f "1" <<< "${statusOutputLine}") repaired"
+			scrubAge="$(cut -d ' ' -f "3" <<< "${statusOutputLine}") done"
 
-			if [ "$(echo "${statusOutputLine}" | cut -d ' ' -f "5")" = "0" ]; then
-				scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "7") <br> to go"
-			elif [ "$(echo "${statusOutputLine}" | cut -d ' ' -f "5")" = "no" ]; then
+			if [ "$(cut -d ' ' -f "5" <<< "${statusOutputLine}")" = "0" ]; then
+				scrubDuration="$(cut -d ' ' -f "7" <<< "${statusOutputLine}") <br> to go"
+			elif [ "$(cut -d ' ' -f "5" <<< "${statusOutputLine}")" = "no" ]; then
 				scrubDuration="Calculating"
-			elif [ "$(echo "${statusOutputLine}" | cut -d ' ' -f "6")" = "days" ]; then
-				scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "5") <br> days to go"
+			elif [ "$(cut -d ' ' -f "6" <<< "${statusOutputLine}")" = "days" ]; then
+				scrubDuration="$(cut -d ' ' -f "5" <<< "${statusOutputLine}") <br> days to go"
 			else
-				scrubDuration="$(echo "${statusOutputLine}" | cut -d ' ' -f "5") <br> to go"
+				scrubDuration="$(cut -d ' ' -f "5" <<< "${statusOutputLine}") <br> to go"
 			fi
 			}
 		fi
@@ -517,7 +517,7 @@ EOF
 			scrubErrorsColor="${bgColor}"
 		fi
 
-		if [ "$(bc <<< "scale=0;($(echo "${scrubAge}" | sed -e 's:% done$::')+0)/1")" -gt "${scrubAgeWarn}" ]; then
+		if [ "$(bc <<< "scale=0;($(sed -e 's:% done$::')+0)/1" <<< "${scrubAge}")" -gt "${scrubAgeWarn}" ]; then
 			scrubAgeColor="${warnColor}"
 		else
 			scrubAgeColor="${bgColor}"
@@ -604,7 +604,7 @@ EOF
 	local drive
 	local altRow="false"
 	for drive in "${drives[@]}"; do
-		if echo "${drive}" | grep -q "nvme"; then
+		if grep -q "nvme" <<< "${drive}"; then
 			# For each drive detected, run "smartctl -AHij" and parse its output.
 			# Start by parsing variables used in other parts of the script.
 			# After parsing the output, compute other values (last test's age, on time in YY-MM-DD-HH).
@@ -614,20 +614,20 @@ EOF
 			# Get drive attributes
 			local nvmeSmarOut="$(smartctl -AHij "/dev/${drive}")"
 
-			local model="$(echo "${nvmeSmarOut}" | jq -Mre '.model_name | values')"
-			local serial="$(echo "${nvmeSmarOut}" | jq -Mre '.serial_number | values')"
-			local temp="$(echo "${nvmeSmarOut}" | jq -Mre '.temperature.current | values')"
-			local onHours="$(echo "${nvmeSmarOut}" | jq -Mre '.power_on_time.hours | values')"
-			local startStop="$(echo "${nvmeSmarOut}" | jq -Mre '.power_cycle_count | values')"
-			local sectorSize="$(echo "${nvmeSmarOut}" | jq -Mre '.logical_block_size | values')"
+			local model="$(jq -Mre '.model_name | values' <<< "${nvmeSmarOut}")"
+			local serial="$(jq -Mre '.serial_number | values' <<< "${nvmeSmarOut}")"
+			local temp="$(jq -Mre '.temperature.current | values' <<< "${nvmeSmarOut}")"
+			local onHours="$(jq -Mre '.power_on_time.hours | values' <<< "${nvmeSmarOut}")"
+			local startStop="$(jq -Mre '.power_cycle_count | values' <<< "${nvmeSmarOut}")"
+			local sectorSize="$(jq -Mre '.logical_block_size | values' <<< "${nvmeSmarOut}")"
 
-			local mediaErrors="$(echo "${nvmeSmarOut}" | jq -Mre '.nvme_smart_health_information_log.media_errors | values')"
-			local errorsLogs="$(echo "${nvmeSmarOut}" | jq -Mre '.nvme_smart_health_information_log.num_err_log_entries | values')"
-			local critWarning="$(echo "${nvmeSmarOut}" | jq -Mre '.nvme_smart_health_information_log.critical_warning | values')"
-			local wearLeveling="$(echo "${nvmeSmarOut}" | jq -Mre '.nvme_smart_health_information_log.available_spare | values')"
-			local totalLBA="$(echo "${nvmeSmarOut}" | jq -Mre '.nvme_smart_health_information_log.data_units_written | values')"
+			local mediaErrors="$(jq -Mre '.nvme_smart_health_information_log.media_errors | values' <<< "${nvmeSmarOut}")"
+			local errorsLogs="$(jq -Mre '.nvme_smart_health_information_log.num_err_log_entries | values' <<< "${nvmeSmarOut}")"
+			local critWarning="$(jq -Mre '.nvme_smart_health_information_log.critical_warning | values' <<< "${nvmeSmarOut}")"
+			local wearLeveling="$(jq -Mre '.nvme_smart_health_information_log.available_spare | values' <<< "${nvmeSmarOut}")"
+			local totalLBA="$(jq -Mre '.nvme_smart_health_information_log.data_units_written | values' <<< "${nvmeSmarOut}")"
 
-			if [ "$(echo "${nvmeSmarOut}" | jq -Mre '.smart_status.passed | values')" = "true" ]; then
+			if [ "$(jq -Mre '.smart_status.passed | values' <<< "${nvmeSmarOut}")" = "true" ]; then
 				local smartStatus="PASSED"
 			else
 				local smartStatus="FAILED"
@@ -675,7 +675,7 @@ EOF
 
 			## Formatting
 			# Calculate capacity for user consumption
-			local capacityByte="$(echo "${nvmeSmarOut}" | jq -Mre '.user_capacity.bytes | values')"
+			local capacityByte="$(jq -Mre '.user_capacity.bytes | values' <<< "${nvmeSmarOut}")"
 			: "${capacityByte:="0"}"
 
 			if [ "${#capacityByte}" -gt "12" ]; then
@@ -918,8 +918,8 @@ EOF
 	local altRow="false"
 	for drive in "${drives[@]}"; do
 		local ssdInfoSmrt="$(smartctl -AHijl xselftest,selftest --log="devstat" "/dev/${drive}")"
-		local rotTst="$(echo "${ssdInfoSmrt}" | jq -Mre '.rotation_rate | values')"
-		local scsiTst="$(echo "${ssdInfoSmrt}" | jq -Mre '.device.type | values')"
+		local rotTst="$(jq -Mre '.rotation_rate | values' <<< "${ssdInfoSmrt}")"
+		local scsiTst="$(jq -Mre '.device.type | values' <<< "${ssdInfoSmrt}")"
 		if [ "${rotTst}" = "0" ] && [ ! "${scsiTst}" = "scsi" ]; then
 			# For each drive detected, run "smartctl -AHijl xselftest,selftest" and parse its output.
 			# Start by parsing out the variables used in other parts of the script.
@@ -929,58 +929,58 @@ EOF
 			local device="${drive}"
 
 			# Available if any tests have completed
-			if [ ! -z "$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table | values')" ]; then
-				local lastTestHours="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].lifetime_hours | values')"
-				local lastTestType="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].type.string | values')"
-				local lastTestStatus="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].status.passed | values')"
+			if [ ! -z "$(jq -Mre '.ata_smart_self_test_log.extended.table | values' <<< "${ssdInfoSmrt}")" ]; then
+				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].lifetime_hours | values' <<< "${ssdInfoSmrt}")"
+				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].type.string | values' <<< "${ssdInfoSmrt}")"
+				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].status.passed | values' <<< "${ssdInfoSmrt}")"
 			else
-				local lastTestHours="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].lifetime_hours | values')"
-				local lastTestType="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].type.string | values')"
-				local lastTestStatus="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].status.passed | values')"
+				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].lifetime_hours | values' <<< "${ssdInfoSmrt}")"
+				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].type.string | values' <<< "${ssdInfoSmrt}")"
+				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].status.passed | values' <<< "${ssdInfoSmrt}")"
 			fi
 
 			# Available for any drive smartd knows about
-			if [ "$(echo "${ssdInfoSmrt}" | jq -Mre '.smart_status.passed | values')" = "true" ]; then
+			if [ "$(jq -Mre '.smart_status.passed | values' <<< "${ssdInfoSmrt}")" = "true" ]; then
 				local smartStatus="PASSED"
 			else
 				local smartStatus="FAILED"
 			fi
 
-			local model="$(echo "${ssdInfoSmrt}" | jq -Mre '.model_name | values')"
-			local serial="$(echo "${ssdInfoSmrt}" | jq -Mre '.serial_number | values')"
-			local temp="$(echo "${ssdInfoSmrt}" | jq -Mre '.temperature.current | values')"
-			local onHours="$(echo "${ssdInfoSmrt}" | jq -Mre '.power_on_time.hours | values')"
-			local startStop="$(echo "${ssdInfoSmrt}" | jq -Mre '.power_cycle_count | values')"
-			local sectorSize="$(echo "${ssdInfoSmrt}" | jq -Mre '.logical_block_size | values')"
+			local model="$(jq -Mre '.model_name | values' <<< "${ssdInfoSmrt}")"
+			local serial="$(jq -Mre '.serial_number | values' <<< "${ssdInfoSmrt}")"
+			local temp="$(jq -Mre '.temperature.current | values' <<< "${ssdInfoSmrt}")"
+			local onHours="$(jq -Mre '.power_on_time.hours | values' <<< "${ssdInfoSmrt}")"
+			local startStop="$(jq -Mre '.power_cycle_count | values' <<< "${ssdInfoSmrt}")"
+			local sectorSize="$(jq -Mre '.logical_block_size | values' <<< "${ssdInfoSmrt}")"
 
 			# Available for most common drives
-			local reAlloc="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values')"
-			local progFail="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 171) | .raw.value | values')"
-			local eraseFail="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 172) | .raw.value | values')"
-			local offlineUnc="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 187) | .raw.value | values')"
-			local crcErrors="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values')"
+			local reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			local progFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 171) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			local eraseFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 172) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 187) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${ssdInfoSmrt}")"
 
 			# No standard attribute for % ssd life remanining
-			local wearLeveling="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 173) | .value | values')"
+			local wearLeveling="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 173) | .value | values' <<< "${ssdInfoSmrt}")"
 			if [ -z "${wearLeveling}" ]; then
-				wearLeveling="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 231) | .value | values')"
+				wearLeveling="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 231) | .value | values' <<< "${ssdInfoSmrt}")"
 				if [ -z "${wearLeveling}" ]; then
-					wearLeveling="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 233) | .value | values')"
+					wearLeveling="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 233) | .value | values' <<< "${ssdInfoSmrt}")"
 					if [ -z "${wearLeveling}" ]; then
-						wearLeveling="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 177) | .value | values')"
+						wearLeveling="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 177) | .value | values' <<< "${ssdInfoSmrt}")"
 					fi
 				fi
 			fi
 
 			# Get LBA written from the stats page for data written
-			if [ ! -z "$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_device_statistics.pages[0] | values')" ]; then
-				local totalLBA="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_device_statistics.pages[0].table[] | select(.name == "Logical Sectors Written") | .value | values')"
-			elif [ "$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 175) | .name | values')" = "Host_Writes_MiB" ]; then
+			if [ ! -z "$(jq -Mre '.ata_device_statistics.pages[0] | values' <<< "${ssdInfoSmrt}")" ]; then
+				local totalLBA="$(jq -Mre '.ata_device_statistics.pages[0].table[] | select(.name == "Logical Sectors Written") | .value | values' <<< "${ssdInfoSmrt}")"
+			elif [ "$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 175) | .name | values' <<< "${ssdInfoSmrt}")" = "Host_Writes_MiB" ]; then
 				# Fallback for apple SSDs that do not have a stats page
-				local totalLBA="$(bc <<< "($(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 175) | .raw.value | values') * (1024^2) / ${sectorSize})")"
-			elif [ "$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 241) | .name | values')" = "Total_LBAs_Written" ]; then
+				local totalLBA="$(bc <<< "($(jq -Mre '.ata_smart_attributes.table[] | select(.id == 175) | .raw.value | values' <<< "${ssdInfoSmrt}") * (1024^2) / ${sectorSize})")"
+			elif [ "$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 241) | .name | values' <<< "${ssdInfoSmrt}")" = "Total_LBAs_Written" ]; then
 				# Fallback for seagate SSDs that do not have a stats page
-				local totalLBA="$(echo "${ssdInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 241)')"
+				local totalLBA="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 241)' <<< "${ssdInfoSmrt}")"
 			else
 				local totalLBA="0"
 			fi
@@ -1045,7 +1045,7 @@ EOF
 
 			## Formatting
 			# Calculate capacity for user consumption
-			local capacityByte="$(echo "${ssdInfoSmrt}" | jq -Mre '.user_capacity.bytes | values')"
+			local capacityByte="$(jq -Mre '.user_capacity.bytes | values' <<< "${ssdInfoSmrt}")"
 			: "${capacityByte:="0"}"
 
 			if [ "${#capacityByte}" -gt "12" ]; then
@@ -1324,9 +1324,9 @@ EOF
 	local altRow="false"
 	for drive in "${drives[@]}"; do
 		local hddInfoSmrt="$(smartctl -AHijl xselftest,selftest "/dev/${drive}")"
-		local rotTst="$(echo "${hddInfoSmrt}" | jq -Mre '.rotation_rate | values')"
-		local scsiTst="$(echo "${hddInfoSmrt}" | jq -Mre '.device.type | values')"
-		if [ -z "${rotTst}" ] && [ ! -z "$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[]? | select(.name == "Spin_Up_Time") | .id | values')" ]; then
+		local rotTst="$(jq -Mre '.rotation_rate | values' <<< "${hddInfoSmrt}")"
+		local scsiTst="$(jq -Mre '.device.type | values' <<< "${hddInfoSmrt}")"
+		if [ -z "${rotTst}" ] && [ ! -z "$(jq -Mre '.ata_smart_attributes.table[]? | select(.name == "Spin_Up_Time") | .id | values' <<< "${hddInfoSmrt}")" ]; then
 			rotTst="N/R"
 		fi
 		if [ ! "${rotTst:-"0"}" = "0" ] && [ ! "${scsiTst}" = "scsi" ]; then
@@ -1338,38 +1338,38 @@ EOF
 			local device="${drive}"
 
 			# Available if any tests have completed
-			if [ ! -z "$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table | values')" ]; then
-				local lastTestHours="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].lifetime_hours | values')"
-				local lastTestType="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].type.string | values')"
-				local lastTestStatus="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].status.passed | values')"
+			if [ ! -z "$(jq -Mre '.ata_smart_self_test_log.extended.table | values' <<< "${hddInfoSmrt}")" ]; then
+				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].lifetime_hours | values' <<< "${hddInfoSmrt}")"
+				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].type.string | values' <<< "${hddInfoSmrt}")"
+				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].status.passed | values' <<< "${hddInfoSmrt}")"
 			else
-				local lastTestHours="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].lifetime_hours | values')"
-				local lastTestType="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].type.string | values')"
-				local lastTestStatus="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].status.passed | values')"
+				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].lifetime_hours | values' <<< "${hddInfoSmrt}")"
+				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].type.string | values' <<< "${hddInfoSmrt}")"
+				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].status.passed | values' <<< "${hddInfoSmrt}")"
 			fi
 
 			# Available for any drive smartd knows about
-			if [ "$(echo "${hddInfoSmrt}" | jq -Mre '.smart_status.passed | values')" = "true" ]; then
+			if [ "$(jq -Mre '.smart_status.passed | values' <<< "${hddInfoSmrt}")" = "true" ]; then
 				local smartStatus="PASSED"
 			else
 				local smartStatus="FAILED"
 			fi
 
-			local model="$(echo "${hddInfoSmrt}" | jq -Mre '.model_name | values')"
-			local serial="$(echo "${hddInfoSmrt}" | jq -Mre '.serial_number | values')"
-			local rpm="$(echo "${hddInfoSmrt}" | jq -Mre '.rotation_rate | values')"
-			local temp="$(echo "${hddInfoSmrt}"| jq -Mre '.temperature.current | values')"
-			local onHours="$(echo "${hddInfoSmrt}" | jq -Mre '.power_on_time.hours | values')"
-			local startStop="$(echo "${hddInfoSmrt}" | jq -Mre '.power_cycle_count | values')"
+			local model="$(jq -Mre '.model_name | values' <<< "${hddInfoSmrt}")"
+			local serial="$(jq -Mre '.serial_number | values' <<< "${hddInfoSmrt}")"
+			local rpm="$(jq -Mre '.rotation_rate | values' <<< "${hddInfoSmrt}")"
+			local temp="$(jq -Mre '.temperature.current | values' <<< "${hddInfoSmrt}")"
+			local onHours="$(jq -Mre '.power_on_time.hours | values' <<< "${hddInfoSmrt}")"
+			local startStop="$(jq -Mre '.power_cycle_count | values' <<< "${hddInfoSmrt}")"
 
 			# Available for most common drives
-			local reAlloc="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values')"
-			local spinRetry="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 10) | .raw.value | values')"
-			local reAllocEvent="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 196) | .raw.value | values')"
-			local pending="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 197) | .raw.value | values')"
-			local offlineUnc="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values')"
-			local crcErrors="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values')"
-			local seekErrorHealth="$(echo "${hddInfoSmrt}" | jq -Mre '.ata_smart_attributes.table[] | select(.id == 7) | .value | values')"
+			local reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${hddInfoSmrt}")"
+			local spinRetry="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 10) | .raw.value | values' <<< "${hddInfoSmrt}")"
+			local reAllocEvent="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 196) | .raw.value | values' <<< "${hddInfoSmrt}")"
+			local pending="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 197) | .raw.value | values' <<< "${hddInfoSmrt}")"
+			local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
+			local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
+			local seekErrorHealth="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 7) | .value | values' <<< "${hddInfoSmrt}")"
 
 
 			## Make override adjustments
@@ -1437,7 +1437,7 @@ EOF
 
 			## Formatting
 			# Calculate capacity for user consumption
-			local capacityByte="$(echo "${hddInfoSmrt}" | jq -Mre '.user_capacity.bytes | values')"
+			local capacityByte="$(jq -Mre '.user_capacity.bytes | values' <<< "${hddInfoSmrt}")"
 			: "${capacityByte:="0"}"
 
 			if [ "${#capacityByte}" -gt "12" ]; then
@@ -1691,7 +1691,7 @@ EOF
 	for drive in "${drives[@]}"; do
 		local sasInfoSmrt="$(smartctl -AHijl xselftest,selftest "/dev/${drive}")"
 		local nonJsonSasInfoSmrt="$(smartctl -Al error -l xselftest,selftest "/dev/${drive}")"
-		local rotTst="$(echo "${sasInfoSmrt}" | jq -Mre '.device.type | values')"
+		local rotTst="$(jq -Mre '.device.type | values' <<< "${sasInfoSmrt}")"
 		if [ "${rotTst}" = "scsi" ]; then
 			# For each drive detected, run "smartctl -AHijl xselftest,selftest" and parse its output.
 			# After parsing the output, compute other values (last test's age, on time in YY-MM-DD-HH).
@@ -1701,20 +1701,20 @@ EOF
 			local device="${drive}"
 
 			# Available if any tests have completed #FixMe this info is not currently exported in json for sas drives
-			if [ ! -z "$(echo "${sasInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table | values')" ]; then
-				local lastTestHours="$(echo "${sasInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].lifetime_hours | values')"
-				local lastTestType="$(echo "${sasInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].type.string | values')"
-				local lastTestStatus="$(echo "${sasInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.extended.table[0].status.passed | values')"
+			if [ ! -z "$(jq -Mre '.ata_smart_self_test_log.extended.table | values' <<< "${sasInfoSmrt}")" ]; then
+				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].lifetime_hours | values' <<< "${sasInfoSmrt}")"
+				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].type.string | values' <<< "${sasInfoSmrt}")"
+				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].status.passed | values' <<< "${sasInfoSmrt}")"
 			else
-				local lastTestHours="$(echo "${sasInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].lifetime_hours | values')"
-				local lastTestType="$(echo "${sasInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].type.string | values')"
-				local lastTestStatus="$(echo "${sasInfoSmrt}" | jq -Mre '.ata_smart_self_test_log.standard.table[0].status.passed | values')"
+				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].lifetime_hours | values' <<< "${sasInfoSmrt}")"
+				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].type.string | values' <<< "${sasInfoSmrt}")"
+				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].status.passed | values' <<< "${sasInfoSmrt}")"
 			fi
 
 			# Try the non json output if we do not have a value
 			if [ -z "${lastTestType}" ]; then
-				local runningNowTest="$(echo "${nonJsonSasInfoSmrt}" | grep '# 1' | tr -s " " | cut -d ' ' -sf '5,6,7,8,9')"
-				lastTestType="$(echo "${nonJsonSasInfoSmrt}" | grep '# 1' | tr -s " " | cut -d ' ' -sf '3,4')"
+				local runningNowTest="$(grep '# 1' <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '5,6,7,8,9')"
+				lastTestType="$(grep '# 1' <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '3,4')"
 				# If test results are not reported warn
 				if [ -z "${lastTestType}" ]; then
 					lastTestType="N/A: testing not supported"
@@ -1722,11 +1722,11 @@ EOF
 					lastTestHours=""
 				# Try to pull the values out if they exist
 				elif [ "${runningNowTest}" = "Self test in progress ..." ]; then
-					lastTestHours="$(echo "${sasInfoSmrt}" | jq -Mre '.power_on_time.hours | values')"
-					lastTestStatus="$(echo "${nonJsonSasInfoSmrt}" | grep '# 1' | tr -s " " | cut -d ' ' -sf '12-15')"
+					lastTestHours="$(jq -Mre '.power_on_time.hours | values' <<< "${sasInfoSmrt}")"
+					lastTestStatus="$(grep '# 1' <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '12-15')"
 				else
-					lastTestHours="$(echo "${nonJsonSasInfoSmrt}" | grep '# 1' | tr -s " " | cut -d ' ' -sf '7')"
-					lastTestStatus="$(echo "${nonJsonSasInfoSmrt}" | grep '# 1' | tr -s " " | cut -d ' ' -sf '8-11')"
+					lastTestHours="$(grep '# 1' <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '7')"
+					lastTestStatus="$(grep '# 1' <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '8-11')"
 				fi
 				# Mimic the true/false response expected from json in the future
 				if [ "${lastTestStatus}" = "- [- - -]" ]; then
@@ -1743,44 +1743,50 @@ EOF
 			fi
 
 			# Available for any drive smartd knows about
-			if [ "$(echo "${sasInfoSmrt}" | jq -Mre '.smart_status.passed | values')" = "true" ]; then
+			if [ "$(jq -Mre '.smart_status.passed | values' <<< "${sasInfoSmrt}")" = "true" ]; then
 				local smartStatus="PASSED"
 			else
 				local smartStatus="FAILED"
 			fi
 
-			local model="$(echo "${sasInfoSmrt}" | jq -Mre '.model_name | values')"
-			local serial="$(echo "${sasInfoSmrt}" | jq -Mre '.serial_number | values')"
-			local rpm="$(echo "${sasInfoSmrt}" | jq -Mre '.rotation_rate | values')"
+			local model="$(jq -Mre '.model_name | values' <<< "${sasInfoSmrt}")"
+			local serial="$(jq -Mre '.serial_number | values' <<< "${sasInfoSmrt}")"
+			local rpm="$(jq -Mre '.rotation_rate | values' <<< "${sasInfoSmrt}")"
+
 			# SAS drives may be SSDs or HDDs
+			local wearLeveling
 			if [ "${rpm:-"0"}" = "0" ]; then
-				local percentUsed="$(echo "${sasInfoSmrt}" | jq -Mre '.scsi_percentage_used_endurance_indicator | values')"
+				local percentUsed="$(jq -Mre '.scsi_percentage_used_endurance_indicator | values' <<< "${sasInfoSmrt}")"
+				if [ ! -z "${percentUsed}" ]; then
+					wearLeveling="((100 - ${percentUsed:-0}))"
+				fi
 				rpm="SSD "
 			fi
-			local temp="$(echo "${sasInfoSmrt}" | jq -Mre '.temperature.current | values')"
-			local onHours="$(echo "${sasInfoSmrt}" | jq -Mre '.power_on_time.hours | values')"
+
+			local temp="$(jq -Mre '.temperature.current | values' <<< "${sasInfoSmrt}")"
+			local onHours="$(jq -Mre '.power_on_time.hours | values' <<< "${sasInfoSmrt}")"
 
 			# Available for most common drives
-			local scsiGrownDefectList="$(echo "${sasInfoSmrt}" | jq -Mre '.scsi_grown_defect_list | values')"
-			local uncorrectedReadErrors="$(echo "${sasInfoSmrt}" | jq -Mre '.read.total_uncorrected_errors | values')"
-			local uncorrectedWriteErrors="$(echo "${sasInfoSmrt}" | jq -Mre '.write.total_uncorrected_errors | values')"
-			local uncorrectedVerifyErrors="$(echo "${sasInfoSmrt}" | jq -Mre '.verify.total_uncorrected_errors | values')"
+			local scsiGrownDefectList="$(jq -Mre '.scsi_grown_defect_list | values' <<< "${sasInfoSmrt}")"
+			local uncorrectedReadErrors="$(jq -Mre '.read.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			local uncorrectedWriteErrors="$(jq -Mre '.write.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			local uncorrectedVerifyErrors="$(jq -Mre '.verify.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
 
 			# Try the non json output if we do not have a value
 			if [ -z "${uncorrectedReadErrors}" ]; then
-				uncorrectedReadErrors="$(echo "${nonJsonSasInfoSmrt}" | grep "read:" | tr -s " " | cut -d ' ' -sf '8')"
+				uncorrectedReadErrors="$(grep "read:" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '8')"
 			fi
 			if [ -z "${uncorrectedWriteErrors}" ]; then
-				uncorrectedWriteErrors="$(echo "${nonJsonSasInfoSmrt}" | grep "write:" | tr -s " " | cut -d ' ' -sf '8')"
+				uncorrectedWriteErrors="$(grep "write:" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '8')"
 			fi
 			if [ -z "${uncorrectedVerifyErrors}" ]; then
-				uncorrectedVerifyErrors="$(echo "${nonJsonSasInfoSmrt}" | grep "verify:" | tr -s " " | cut -d ' ' -sf '8')"
+				uncorrectedVerifyErrors="$(grep "verify:" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '8')"
 			fi
 
 			# FixMe: relies entirely on non-json output
-			local nonMediumErrors="$(echo "${nonJsonSasInfoSmrt}" | grep "Non-medium" | tr -s " " | cut -d ' ' -sf '4')"
-			local accumStartStopCycles="$(echo "${nonJsonSasInfoSmrt}" | grep "Accumulated start-stop" | tr -s " " | cut -d ' ' -sf '4')"
-			local accumLoadUnloadCycles="$(echo "${nonJsonSasInfoSmrt}" | grep "Accumulated load-unload" | tr -s " " | cut -d ' ' -sf '4')"
+			local nonMediumErrors="$(grep "Non-medium" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
+			local accumStartStopCycles="$(grep "Accumulated start-stop" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
+			local accumLoadUnloadCycles="$(grep "Accumulated load-unload" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
 
 
 			## Make override adjustments
@@ -1836,7 +1842,7 @@ EOF
 
 			## Formatting
 			# Calculate capacity for user consumption
-			local capacityByte="$(echo "${sasInfoSmrt}" | jq -Mre '.user_capacity.bytes | values')"
+			local capacityByte="$(jq -Mre '.user_capacity.bytes | values' <<< "${sasInfoSmrt}")"
 			: "${capacityByte:="0"}"
 
 			if [ "${#capacityByte}" -gt "12" ]; then
@@ -2281,7 +2287,7 @@ if [ "${systemType}" = "BSD" ]; then
 	readarray -t "drives" <<< "$(for drive in ${localDriveList}; do
 		if smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
 			printf "%s\n" "${drive}"
-		elif echo "${drive}" | grep -q "nvme"; then
+		elif grep -q "nvme" <<< "${drive}"; then
 			printf "%s\n" "${drive}"
 		fi
 	done | sort -V | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
@@ -2289,7 +2295,7 @@ else
 	readarray -t "drives" <<< "$(for drive in ${localDriveList}; do
 		if smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
 			printf "%s\n" "${#drive} ${drive}"
-		elif echo "${drive}" | grep -q "nvme"; then
+		elif grep -q "nvme" <<< "${drive}"; then
 			printf "%s\n" "${#drive} ${drive}"
 		fi
 	done | sort -Vbk 1 -k 2 | cut -d ' ' -f 2 | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
@@ -2299,21 +2305,21 @@ fi
 if [ "${includeSSD}" = "true" ]; then
 	for drive in "${drives[@]}"; do
 		driveTypeExistSmartOutput="$(smartctl -ij "/dev/${drive}")"
-		if [ "$(echo "${driveTypeExistSmartOutput}" | jq -Mre '.rotation_rate | values')" = "0" ] && [ ! "$(echo "${driveTypeExistSmartOutput}" | jq -Mre '.device.type | values')" = "scsi" ]; then
+		if [ "$(jq -Mre '.rotation_rate | values' <<< "${driveTypeExistSmartOutput}")" = "0" ] && [ ! "$(jq -Mre '.device.type | values' <<< "${driveTypeExistSmartOutput}")" = "scsi" ]; then
 			ssdExist="true"
 			break
 		else
 			ssdExist="false"
 		fi
 	done
-	if echo "${drives[*]}" | grep -q "nvme"; then
+	if grep -q "nvme" <<< "${drives[*]}"; then
 		NVMeExist="true"
 	fi
 fi
 # Test to see if there are any HDDs
 for drive in "${drives[@]}"; do
 	driveTypeExistSmartOutput="$(smartctl -ij "/dev/${drive}")"
-	if [ ! "$(echo "${driveTypeExistSmartOutput}" | jq -Mre '.rotation_rate | values')" = "0" ] && [ ! "$(echo "${driveTypeExistSmartOutput}" | jq -Mre '.device.type | values')" = "scsi" ]; then
+	if [ ! "$(jq -Mre '.rotation_rate | values' <<< "${driveTypeExistSmartOutput}")" = "0" ] && [ ! "$(jq -Mre '.device.type | values' <<< "${driveTypeExistSmartOutput}")" = "scsi" ]; then
 		hddExist="true"
 		break
 	else
@@ -2324,7 +2330,7 @@ done
 if [ "${includeSAS}" = "true" ]; then
 	for drive in "${drives[@]}"; do
 		driveTypeExistSmartOutput="$(smartctl -ij "/dev/${drive}")"
-		if [ "$(echo "${driveTypeExistSmartOutput}" | jq -Mre '.device.type | values')" = "scsi" ]; then
+		if [ "$(jq -Mre '.device.type | values' <<< "${driveTypeExistSmartOutput}")" = "scsi" ]; then
 			sasExist="true"
 			break
 		else
@@ -2442,32 +2448,32 @@ for drive in "${drives[@]}"; do
 	smartOut="$(smartctl --json=u -i "/dev/${drive}")" # FixMe: smart support flag is not yet implemented in smartctl json output.
 	smartTestOut="$(smartctl -l xselftest,selftest "/dev/${drive}" | grep -v 'SMART Extended Self-test')"
 
-	if echo "${smartOut}" | grep "SMART support is:" | grep -q "Enabled"; then # FixMe: smart support flag is not yet implemented in smartctl json output.
+	if grep "SMART support is:" <<< "${smartOut}" | grep -q "Enabled"; then # FixMe: smart support flag is not yet implemented in smartctl json output.
 		# Gather brand and serial number of each drive
-		brand="$(echo "${smartOut}" | jq -Mre '.model_family | values')"
+		brand="$(jq -Mre '.model_family | values' <<< "${smartOut}")"
 		if [ -z "${brand}" ]; then
-			brand="$(echo "${smartOut}" | jq -Mre '.model_name | values')";
+			brand="$(jq -Mre '.model_name | values' <<< "${smartOut}")";
 		fi
-		serial="$(echo "${smartOut}" | jq -Mre '.serial_number | values')"
+		serial="$(jq -Mre '.serial_number | values' <<< "${smartOut}")"
 		{
 			# Create a simple header and drop the output of some basic smartctl commands
 			echo '<b>########## SMART status report for '"${drive}"' drive ('"${brand}: ${serial}"') ##########</b>'
 			smartctl -H -A -l error "/dev/${drive}"
-			echo "${smartTestOut}" | grep 'Num' | cut -c6- | head -1
-			echo "${smartTestOut}" | grep 'Extended' | cut -c6- | head -1
-			echo "${smartTestOut}" | grep 'Short' | cut -c6- | head -1
-			echo "${smartTestOut}" | grep 'Conveyance' | cut -c6- | head -1
+			grep 'Num' <<< "${smartTestOut}" | cut -c6- | head -1
+			grep 'Extended' <<< "${smartTestOut}" | cut -c6- | head -1
+			grep 'Short' <<< "${smartTestOut}" | cut -c6- | head -1
+			grep 'Conveyance' <<< "${smartTestOut}" | cut -c6- | head -1
 			echo '<br><br>'
 		} >> "${logfile}"
 
-	elif echo "${drive}" | grep -q "nvme"; then
+	elif grep -q "nvme" <<< "${drive}"; then
 		# NVMe drives are handled separately because self tests are not yet supported.
 		# Gather brand and serial number of each drive
-		brand="$(echo "${smartOut}" | jq -Mre '.model_family | values')"
+		brand="$(jq -Mre '.model_family | values' <<< "${smartOut}")"
 		if [ -z "${brand}" ]; then
-			brand="$(echo "${smartOut}" | jq -Mre '.model_name | values')";
+			brand="$(jq -Mre '.model_name | values' <<< "${smartOut}")";
 		fi
-		serial="$(echo "${smartOut}" | jq -Mre '.serial_number | values')"
+		serial="$(jq -Mre '.serial_number | values' <<< "${smartOut}")"
 		{
 			# Create a simple header and drop the output of some basic smartctl commands
 			echo '<b>########## SMART status report for '"${drive}"' drive ('"${brand}: ${serial}"') ##########</b>'
