@@ -2540,7 +2540,7 @@ for drive in "${drives[@]}"; do
 			smartctl -H -A -l error "/dev/${drive}"
 			# FixMe: bsd only; still waiting on suport for nvme tests in smartctl
 			if [ "${systemType}" = "BSD" ] && [ ! "${smartctl_vers_74_plus}" = "true" ]; then
-				nvmecontrol logpage -p 0x06 "${drive}" | grep '\['
+				nvmecontrol logpage -p 0x06 "${drive}" 2> /dev/null | grep '\['
 			elif [ "${smartctl_vers_74_plus}" = "true" ]; then
 				grep 'Num' <<< "${smartTestOut}" | cut -c6- | head -1
 				grep 'Extended' <<< "${smartTestOut}" | cut -c6- | head -1
