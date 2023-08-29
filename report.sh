@@ -153,7 +153,7 @@ function ConfigBackup () {
 
 
 	# Set up file names, etc for later
-	tarfile="/tmp/config_backup.tar.gz"
+	tarfile="/tmp/report/config_backup.tar.gz"
 	fnconfigdest_version="$(< /etc/version sed -e 's:)::' -e 's:(::' -e 's: :-:' | tr -d '\n')"
 	if [ "${systemType}" = "BSD" ]; then
 		fnconfigdest_date="$(date -r "${runDate}" '+%Y%m%d%H%M%S')"
@@ -161,9 +161,43 @@ function ConfigBackup () {
 		fnconfigdest_date="$(date -d "@${runDate}" '+%Y%m%d%H%M%S')"
 	fi
 	filename="${fnconfigdest_date}_${fnconfigdest_version}"
+	###
+	if [ ! -d "/tmp/report/" ]; then
+		mkdir -p "/tmp/report/"
+	fi
 
 	### Test config integrity
-	if [ ! "$(sqlite3 "/data/freenas-v1.db" "pragma integrity_check;")" = "ok" ]; then
+	if [ "${systemSubType}" = "pfSense" ]; then
+		filename="${filename}_config"
+		cp -a "/conf/config.xml" "/tmp/report/${filename}.xml"
+
+		(
+			cd "/tmp/report/" || exit;
+			tar -czf "${tarfile}" "./${filename}.xml"
+		)
+		{
+			if [ "${emailBackup}" = "true" ]; then
+				# Write MIME section header for file attachment (encoded with base64)
+				tee <<- EOF
+					--${boundary}
+					Content-Type: application/tar+gzip name="${filename}.tar.gz"
+					Content-Disposition: attachment; filename="${filename}.tar.gz"
+					Content-Transfer-Encoding: base64
+
+EOF
+				base64 "${tarfile}"
+			fi
+
+			# Write MIME section header for html content to come below
+			tee <<- EOF
+				--${boundary}
+				Content-Transfer-Encoding: 8bit
+				Content-Type: text/html; charset="utf-8"
+
+EOF
+		} >> "${logfile}"
+
+	elif [ ! "$(sqlite3 "/data/freenas-v1.db" "pragma integrity_check;")" = "ok" ]; then
 
 		# Config integrity check failed, set MIME content type to html and print warning
 		{
@@ -179,20 +213,20 @@ EOF
 		} >> "${logfile}"
 	else
 		# Config integrity check passed; copy config db, generate checksums, make .tar.gz archive
-		sqlite3 "/data/freenas-v1.db" ".backup main /tmp/${filename}.db"
-		cp -f "/data/pwenc_secret" "/tmp/"
+		sqlite3 "/data/freenas-v1.db" ".backup main /tmp/report/${filename}.db"
+		cp -f "/data/pwenc_secret" "/tmp/report/"
 		if [ ! -z "${MD5SUM}" ]; then
-			${MD5SUM} "/tmp/${filename}.db" > /tmp/config_backup.md5
+			${MD5SUM} "/tmp/report/${filename}.db" > /tmp/report/config_backup.md5
 		else
-			md5sum "/tmp/${filename}.db" > /tmp/config_backup.md5
+			md5sum "/tmp/report/${filename}.db" > /tmp/report/config_backup.md5
 		fi
 		if [ ! -z "${SHA256SUM}" ]; then
-			${SHA256SUM} "/tmp/${filename}.db" > /tmp/config_backup.sha256
+			${SHA256SUM} "/tmp/report/${filename}.db" > /tmp/report/config_backup.sha256
 		else
-			sha256sum "/tmp/${filename}.db" > /tmp/config_backup.sha256
+			sha256sum "/tmp/report/${filename}.db" > /tmp/report/config_backup.sha256
 		fi
 		(
-			cd "/tmp/" || exit;
+			cd "/tmp/report/" || exit;
 			tar -czf "${tarfile}" "./${filename}.db" "./config_backup.md5" "./config_backup.sha256" "./pwenc_secret"
 		)
 		{
@@ -224,9 +258,7 @@ EOF
 			fi
 			cp "${tarfile}" "${backupLocation}/${filename}.tar.gz"
 		fi
-		rm "/tmp/${filename}.db"
-		rm "/tmp/config_backup.md5"
-		rm "/tmp/config_backup.sha256"
+		rm "/tmp/report/*"
 		rm "${tarfile}"
 	fi
 }
@@ -2229,6 +2261,9 @@ fi
 # Check if we are running on BSD
 if [[ "$(uname -mrs)" =~ .*"BSD".* ]]; then
 	systemType="BSD"
+	if [ "$(cat "/etc/platform" 2> /dev/null)" = "pfSense" ]; then
+		systemSubType="pfSense"
+	fi
 fi
 
 # Check if needed software is installed.
@@ -2247,11 +2282,15 @@ smartctl
 jq
 head
 tail
-sendmail
 sort
 tee
 sqlite3
 )
+if [ ! "${systemSubType}" = "pfSense" ]; then
+commands+=(
+sendmail
+)
+fi
 if [ "${systemType}" = "BSD" ]; then
 commands+=(
 glabel
@@ -2316,9 +2355,21 @@ fi
 
 ###### Auto-generated Parameters
 host="$(hostname -s)"
-fromEmail="$(sqlite3 /data/freenas-v1.db 'select em_fromemail from system_email;')"
-fromName="$(sqlite3 /data/freenas-v1.db 'select em_fromname from system_email;')"
+if [ "${systemSubType}" = "pfSense" ]; then
+	fromEmail="$(hostname -s)@$(hostname -d | sed -e 's:local\.::')"
+	fromName="$(hostname -s)"
+else
+	fromEmail="$(sqlite3 /data/freenas-v1.db 'select em_fromemail from system_email;')"
+	fromName="$(sqlite3 /data/freenas-v1.db 'select em_fromname from system_email;')"
+fi
+
 runDate="$(date '+%s')"
+if [ ! -d "${logfileLocation}" ]; then
+	mkdir -p "${logfileLocation}"
+	if [ "${systemSubType}" = "pfSense" ]; then
+		chmod 777 "${logfileLocation}"
+	fi
+fi
 if [ "${systemType}" = "BSD" ]; then
 	logfile="${logfileLocation}/$(date -r "${runDate}" '+%Y%m%d%H%M%S')_${logfileName}.tmp"
 else
@@ -2333,7 +2384,6 @@ boundary="$(dbus-uuidgen)"
 messageid="$(dbus-uuidgen)"
 
 # Reorders the drives in ascending order
-# FixMe: smart support flag is not yet implemented in smartctl json output.
 if [ "${systemType}" = "BSD" ]; then
 	localDriveList="$(sysctl -n kern.disks | sed -e 's:nvd:nvme:g')"
 else
@@ -2342,6 +2392,7 @@ else
 	# lsblk -n -l -o NAME -E PKNAME | tr '\n' ' '
 fi
 
+# FixMe: smart support flag is not yet implemented in smartctl json output.
 if [ "${systemType}" = "BSD" ]; then
 	# This sort breaks on linux when going to four leter drive ids: "sdab"; it works fine for bsd's numbered drive ids though.
 	readarray -t "drives" <<< "$(for drive in ${localDriveList}; do
@@ -2505,10 +2556,10 @@ done
 
 ### SMART status for each drive
 for drive in "${drives[@]}"; do
-	smartOut="$(smartctl --json=u -i "/dev/${drive}")" # FixMe: smart support flag is not yet implemented in smartctl json output.
+	smartOut="$(smartctl --json=u -i "/dev/${drive}")"
 	smartTestOut="$(smartctl -l xselftest,selftest "/dev/${drive}" | grep -v 'SMART Extended Self-test')"
 
-	if grep "SMART support is:" <<< "${smartOut}" | grep -q "Enabled"; then # FixMe: smart support flag is not yet implemented in smartctl json output.
+	if [ "$(jq -Mre '.smart_support.enabled | values' <<< "${smartOut}")" = "true" ] || grep "SMART support is:" <<< "${smartOut}" | grep -q "Enabled"; then
 		# Gather brand and serial number of each drive
 		brand="$(jq -Mre '.model_family | values' <<< "${smartOut}")"
 		if [ -z "${brand}" ]; then
@@ -2579,7 +2630,11 @@ fi
 )  >> "${logfile}"
 
 ### Send report
-sendmail -ti < "${logfile}"
-if [ "${saveLogfile}" = "false" ]; then
-	rm "${logfile}"
+if [ ! "${systemSubType}" = "pfSense" ]; then
+	sendmail -ti < "${logfile}"
+	if [ "${saveLogfile}" = "false" ]; then
+		rm "${logfile}"
+	fi
+else
+	chmod 666 "${logfile}"
 fi
