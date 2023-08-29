@@ -2183,6 +2183,9 @@ function DumpFiles () {
 	# Dump zpool status
 	zpool status -Lv > "${dumpPath}${zfsVersion}.txt"
 
+	# Dump smartctl version
+	smartctl -jV > "${dumpPath}smartctl_vers.txt"
+
 	# Dump drive data
 	{
 		for drive in "${drives[@]}"; do
@@ -2392,11 +2395,12 @@ else
 	# lsblk -n -l -o NAME -E PKNAME | tr '\n' ' '
 fi
 
-# FixMe: smart support flag is not yet implemented in smartctl json output.
 if [ "${systemType}" = "BSD" ]; then
 	# This sort breaks on linux when going to four leter drive ids: "sdab"; it works fine for bsd's numbered drive ids though.
 	readarray -t "drives" <<< "$(for drive in ${localDriveList}; do
-		if smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
+		if [ "${smartctl_vers_74_plus}" = "true" ] && [ "$(smartctl -ji "/dev/${drive}" | jq -Mre '.smart_support.enabled | values')" = "true" ]; then
+			printf "%s\n" "${drive}"
+		elif smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
 			printf "%s\n" "${drive}"
 		elif grep -q "nvme" <<< "${drive}"; then
 			printf "%s\n" "${drive}"
@@ -2404,7 +2408,9 @@ if [ "${systemType}" = "BSD" ]; then
 	done | sort -V | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
 else
 	readarray -t "drives" <<< "$(for drive in ${localDriveList}; do
-		if smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
+		if [ "${smartctl_vers_74_plus}" = "true" ] && [ "$(smartctl -ji "/dev/${drive}" | jq -Mre '.smart_support.enabled | values')" = "true" ]; then
+			printf "%s\n" "${drive}"
+		elif smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
 			printf "%s\n" "${#drive} ${drive}"
 		elif grep -q "nvme" <<< "${drive}"; then
 			printf "%s\n" "${#drive} ${drive}"
@@ -2590,7 +2596,7 @@ for drive in "${drives[@]}"; do
 			# Create a simple header and drop the output of some basic smartctl commands
 			echo '<b>########## SMART status report for '"${drive}"' drive ('"${brand}: ${serial}"') ##########</b>'
 			smartctl -H -A -l error "/dev/${drive}"
-			# FixMe: bsd only; still waiting on suport for nvme tests in smartctl
+
 			if [ "${systemType}" = "BSD" ] && [ ! "${smartctl_vers_74_plus}" = "true" ]; then
 				nvmecontrol logpage -p 0x06 "${drive}" 2> /dev/null | grep '\['
 			elif [ "${smartctl_vers_74_plus}" = "true" ]; then
