@@ -219,7 +219,7 @@ EOF
 
 		# If logfile saving is enabled, copy .tar.gz file to specified location before it (and everything else) is removed below
 		if [ "${saveBackup}" = "true" ]; then
-			if [ ! -d "backupLocation/" ]; then
+			if [ ! -d "${backupLocation}/" ]; then
 				mkdir -p "${backupLocation}/"
 			fi
 			cp "${tarfile}" "${backupLocation}/${filename}.tar.gz"
@@ -1650,7 +1650,6 @@ EOF
 	# End SMART summary table and summary section
 	{
 		echo '</table>'
-		echo '<br><br>'
 	} >> "${logfile}"
 }
 
@@ -2237,6 +2236,7 @@ commands=(
 hostname
 date
 sysctl
+dbus-uuidgen
 sed
 grep
 zpool
@@ -2300,19 +2300,6 @@ if [ ! "${defaultFile}" = "0" ]; then
 	exit 1
 fi
 
-# Get the version numbers for smartctl
-major_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '1p;d')"
-minor_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '2p;d')"
-if [[ "${major_smartctl_vers}" -gt "7" ]]; then
-	smartctl_vers_74_plus="true"
-elif [[ "${major_smartctl_vers}" -eq "7" ]] && [[ "${minor_smartctl_vers}" -ge "4" ]]; then
-	smartctl_vers_74_plus="true"
-elif [ -z "${major_smartctl_vers}" ]; then
-	echo "smartctl version 7 or greater is required" >&2
-	smartctl -V
-	exit 1
-fi
-
 
 ###### Auto-generated Parameters
 host="$(hostname -s)"
@@ -2331,6 +2318,19 @@ else
 fi
 boundary="$(dbus-uuidgen)"
 messageid="$(dbus-uuidgen)"
+
+# Get the version numbers for smartctl
+major_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '1p;d')"
+minor_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '2p;d')"
+if [[ "${major_smartctl_vers}" -gt "7" ]]; then
+	smartctl_vers_74_plus="true"
+elif [[ "${major_smartctl_vers}" -eq "7" ]] && [[ "${minor_smartctl_vers}" -ge "4" ]]; then
+	smartctl_vers_74_plus="true"
+elif [ -z "${major_smartctl_vers}" ]; then
+	echo "smartctl version 7 or greater is required" >&2
+	smartctl -V
+	exit 1
+fi
 
 # Reorders the drives in ascending order
 # FixMe: smart support flag is not yet implemented in smartctl json output.
@@ -2470,6 +2470,7 @@ if [ "${hddExist}" = "true" ]; then
 	HDDSummary
 fi
 
+echo '<br><br>' >> "${logfile}"
 
 
 ###### Detailed Report Section (monospace text)
