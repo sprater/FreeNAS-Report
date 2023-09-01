@@ -2343,6 +2343,13 @@ if [ ! "${defaultFile}" = "0" ]; then
 fi
 
 
+# Must be run as root
+if [ ! "$(whoami)" = "root" ]; then
+	echo "Must be run as root." >&2
+	exit 1
+fi
+
+
 ###### Auto-generated Parameters
 host="$(hostname -s)"
 if [ "${systemSubType}" = "pfSense" ]; then
