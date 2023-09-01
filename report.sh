@@ -2269,7 +2269,7 @@ if [[ "$(uname -mrs)" =~ .*"BSD".* ]]; then
 fi
 
 # Check if needed software is installed.
-PATH="${PATH}:/usr/local/sbin:/usr/local/bin:$(dirname "${configFile}")/usr/bin/"
+export PATH="${PATH}:/usr/local/sbin:/usr/local/bin:$(dirname "${configFile}")/usr/bin/"
 commands=(
 hostname
 date
