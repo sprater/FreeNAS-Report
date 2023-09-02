@@ -610,7 +610,7 @@ function NVMeSummary () {
 
 			  <th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Temp</th> <!-- Temp -->
 
-			  <th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Power-On<br>Time<br>($powerTimeFormat)</th> <!-- Power-On Time -->
+			  <th style="text-align:center; width:120px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Power-On<br>Time<br>(${powerTimeFormat})</th> <!-- Power-On Time -->
 
 			  <th style="text-align:center; width:80px; height:60px; border:1px solid black; border-collapse:collapse; font-family:courier;">Power<br>Cycle<br>Count</th> <!-- Power Cycle Count -->
 
@@ -2257,7 +2257,7 @@ elif [ ! -f "${configFile}" ]; then
 fi
 
 # Source external config file
-# shellcheck source=/dev/null
+# shellcheck source=./report.cfg
 . "${configFile}"
 
 # Check if we are running on BSD
@@ -2269,7 +2269,8 @@ if [[ "$(uname -mrs)" =~ .*"BSD".* ]]; then
 fi
 
 # Check if needed software is installed.
-export PATH="${PATH}:/usr/local/sbin:/usr/local/bin:$(dirname "${configFile}")/usr/bin/"
+PATH="${PATH}:/usr/local/sbin:/usr/local/bin:$(dirname "${configFile}")/usr/bin/"
+export PATH
 commands=(
 hostname
 date
