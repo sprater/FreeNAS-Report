@@ -1416,14 +1416,25 @@ EOF
 			local onHours="$(jq -Mre '.power_on_time.hours | values' <<< "${hddInfoSmrt}")"
 			local startStop="$(jq -Mre '.power_cycle_count | values' <<< "${hddInfoSmrt}")"
 
-			# Available for most common drives
-			local reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${hddInfoSmrt}")"
-			local spinRetry="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 10) | .raw.value | values' <<< "${hddInfoSmrt}")"
-			local reAllocEvent="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 196) | .raw.value | values' <<< "${hddInfoSmrt}")"
-			local pending="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 197) | .raw.value | values' <<< "${hddInfoSmrt}")"
-			local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
-			local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
-			local seekErrorHealth="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 7) | .value | values' <<< "${hddInfoSmrt}")"
+			# If seagate farm stats are available use them
+			if [ "$(jq -Mre '.seagate_farm_log.supported | values' <<< "${hddInfoSmrt}")" = "true" ]; then
+				local reAlloc="$(jq -Mre '.seagate_farm_log.page_3_error_statistics.number_of_reallocated_sectors | values' <<< "${hddInfoSmrt}")"
+				local spinRetry="$(jq -Mre '.seagate_farm_log.page_3_error_statistics.attr_spin_retry_count | values' <<< "${hddInfoSmrt}")"
+				local reAllocEvent="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 196) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local pending="$(jq -Mre '.seagate_farm_log.page_3_error_statistics.number_of_reallocated_candidate_sectors | values' <<< "${hddInfoSmrt}")"
+				local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local seekErrorHealth="$(jq -Mre '.seagate_farm_log.page_5_reliability_statistics.seek_error_rate_normalized | values' <<< "${hddInfoSmrt}")"
+			else
+				# Available for most common drives
+				local reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local spinRetry="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 10) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local reAllocEvent="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 196) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local pending="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 197) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local seekErrorHealth="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 7) | .value | values' <<< "${hddInfoSmrt}")"
+			fi
 
 
 			## Make override adjustments
