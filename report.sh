@@ -2128,7 +2128,7 @@ function ReportUPS () {
 	local upslist
 
 	# Get a list of all ups devices installed on the system:
-	readarray -t "upslist" <<< "$(upsc -l "${host}")"
+	readarray -t "upslist" <<< "$(upsc -l "${host}" 2> /dev/null)"
 
 	{
 		echo '<b>########## UPS status report ##########</b>'
