@@ -1001,8 +1001,15 @@ EOF
 			local reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${ssdInfoSmrt}")"
 			local progFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 171) | .raw.value | values' <<< "${ssdInfoSmrt}")"
 			local eraseFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 172) | .raw.value | values' <<< "${ssdInfoSmrt}")"
-			local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 187) | .raw.value | values' <<< "${ssdInfoSmrt}")"
-			local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+
+			local offlineUnc="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "General Errors Statistics") | .table[] | select(.name == "Number of Reported Uncorrectable Errors") | .value | values' <<< "${ssdInfoSmrt}")"
+			if [ -z "${offlineUnc}" ]; then
+				offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 187) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			fi
+			local crcErrors="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "Transport Statistics") | .table[] | select(.name == "Number of Interface CRC Errors") | .value | values' <<< "${ssdInfoSmrt}")"
+			if [ -z "${crcErrors}" ]; then
+				crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			fi
 
 			# No standard attribute for % ssd life remaining
 			local wearLeveling="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "Solid State Device Statistics") | .table[].value | values' <<< "${ssdInfoSmrt}")"
@@ -1422,17 +1429,37 @@ EOF
 				local spinRetry="$(jq -Mre '.seagate_farm_log.page_3_error_statistics.attr_spin_retry_count | values' <<< "${hddInfoSmrt}")"
 				local reAllocEvent="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 196) | .raw.value | values' <<< "${hddInfoSmrt}")"
 				local pending="$(jq -Mre '.seagate_farm_log.page_3_error_statistics.number_of_reallocated_candidate_sectors | values' <<< "${hddInfoSmrt}")"
-				local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
-				local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
+
+				local offlineUnc="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "General Errors Statistics") | .table[] | select(.name == "Number of Reported Uncorrectable Errors") | .value | values' <<< "${hddInfoSmrt}")"
+				if [ -z "${offlineUnc}" ]; then
+					offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				fi
+				local crcErrors="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "Transport Statistics") | .table[] | select(.name == "Number of Interface CRC Errors") | .value | values' <<< "${hddInfoSmrt}")"
+				if [ -z "${crcErrors}" ]; then
+					crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				fi
+
 				local seekErrorHealth="$(jq -Mre '.seagate_farm_log.page_5_reliability_statistics.seek_error_rate_normalized | values' <<< "${hddInfoSmrt}")"
 			else
 				# Available for most common drives
-				local reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				local reAlloc="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "Rotating Media Statistics") | .table[] | select(.name == "Number of Reallocated Logical Sectors") | .value | values' <<< "${hddInfoSmrt}")"
+				if [ -z "${reAlloc}" ]; then
+					reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				fi
+
 				local spinRetry="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 10) | .raw.value | values' <<< "${hddInfoSmrt}")"
 				local reAllocEvent="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 196) | .raw.value | values' <<< "${hddInfoSmrt}")"
 				local pending="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 197) | .raw.value | values' <<< "${hddInfoSmrt}")"
-				local offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
-				local crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
+
+				local offlineUnc="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "General Errors Statistics") | .table[] | select(.name == "Number of Reported Uncorrectable Errors") | .value | values' <<< "${hddInfoSmrt}")"
+				if [ -z "${offlineUnc}" ]; then
+					offlineUnc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 198) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				fi
+				local crcErrors="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "Transport Statistics") | .table[] | select(.name == "Number of Interface CRC Errors") | .value | values' <<< "${hddInfoSmrt}")"
+				if [ -z "${crcErrors}" ]; then
+					crcErrors="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 199) | .raw.value | values' <<< "${hddInfoSmrt}")"
+				fi
+
 				local seekErrorHealth="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 7) | .value | values' <<< "${hddInfoSmrt}")"
 			fi
 
