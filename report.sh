@@ -1000,7 +1000,13 @@ EOF
 			# Available for most common drives
 			local reAlloc="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 5) | .raw.value | values' <<< "${ssdInfoSmrt}")"
 			local progFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 171) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			if [ -z "${progFail}" ]; then
+				progFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 181) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			fi
 			local eraseFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 172) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			if [ -z "${eraseFail}" ]; then
+				eraseFail="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 182) | .raw.value | values' <<< "${ssdInfoSmrt}")"
+			fi
 
 			local offlineUnc="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "General Errors Statistics") | .table[] | select(.name == "Number of Reported Uncorrectable Errors") | .value | values' <<< "${ssdInfoSmrt}")"
 			if [ -z "${offlineUnc}" ]; then
