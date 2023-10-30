@@ -258,8 +258,8 @@ EOF
 			fi
 			cp "${tarfile}" "${backupLocation}/${filename}.tar.gz"
 		fi
-		rm "/tmp/report/*"
 		rm "${tarfile}"
+		rm /tmp/report/*
 	fi
 }
 
