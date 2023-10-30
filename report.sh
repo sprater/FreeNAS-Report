@@ -2023,7 +2023,7 @@ EOF
 			fi
 
 			# SAS is both SSD and HDD; colorize temp as appropriate
-			if [ "${rpm}" = "SSD" ]; then
+			if [ "${rpm}" = "SSD " ]; then
 				# SAS SSD
 				if [ "${temp:="0"}" -ge "${ssdTempCrit}" ]; then
 					local tempColor="${critColor}"
