@@ -1863,7 +1863,7 @@ EOF
 			if [ "${rpm:-"0"}" = "0" ]; then
 				local percentUsed="$(jq -Mre '.scsi_percentage_used_endurance_indicator | values' <<< "${sasInfoSmrt}")"
 				if [ ! -z "${percentUsed}" ]; then
-					wearLeveling="((100 - ${percentUsed:-0}))"
+					wearLeveling="$((100 - ${percentUsed:-0}))"
 				fi
 				rpm="SSD "
 			fi
