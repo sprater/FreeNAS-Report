@@ -2323,7 +2323,6 @@ export PATH
 commands=(
 hostname
 date
-sysctl
 dbus-uuidgen
 sed
 grep
@@ -2346,6 +2345,7 @@ sendmail
 fi
 if [ "${systemType}" = "BSD" ]; then
 commands+=(
+sysctl
 glabel
 nvmecontrol
 )
