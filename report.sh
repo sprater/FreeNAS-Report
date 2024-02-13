@@ -2386,9 +2386,13 @@ for command in "${commands[@]}"; do
 done
 
 
-# Do not run if the config file has not been edited.
+# Do not run if the config file has not been edited or is missing or malformed.
 if [ ! "${defaultFile}" = "0" ]; then
-	echo "Please edit the config file for your setup" >&2
+	if [ -z "${defaultFile+x}" ]; then
+		echo "Your config file apears to be malformed or missing; please regenerate it." >&2
+		exit 1
+	fi
+	echo "Please edit the config file for your setup." >&2
 	exit 1
 fi
 
