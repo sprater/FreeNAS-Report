@@ -17,7 +17,7 @@ You should also configure your smart tests otherwise the script will not include
 
 # Getting Started
 
-Place the script under a user `/home/user` or in one of your pools.
+Place the script under a user `/root` or in one of your pools.
 
 Create a Cron Job with the following configuration:
 
