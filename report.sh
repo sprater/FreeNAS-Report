@@ -2538,6 +2538,7 @@ EOF
 	else
 		echo "Date: $(date -d "@${runDate}" '+%a, %d %b %Y %T %Z')"
 	fi
+	echo ""
 } > "${logfile}"
 
 
