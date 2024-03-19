@@ -2277,6 +2277,33 @@ EOF
 
 }
 
+function DeDupDrives () {
+	local drive
+	local InfoSmrt
+	local nonJsonSasInfoSmrt
+	local drive_lun_id
+	declare -A lun_list
+
+	for drive in "${drives_dup[@]}"; do
+		InfoSmrt="$(smartctl -xj "/dev/${drive}")"
+
+		if [ "${smartctl_vers_74_plus}" = "true" ]; then
+			drive_lun_id="$(jq -Mre '.serial_number | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.naa | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.id | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.ext_id | values' <<< "${InfoSmrt}")"
+			# FixMe: need to see if Logical Unit id is in json output
+		else
+			nonJsonSasInfoSmrt="$(smartctl -x "/dev/${drive}")"
+			drive_lun_id="$(jq -Mre '.serial_number | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.naa | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.id | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.ext_id | values' <<< "${InfoSmrt}")$(grep 'Logical Unit id' <<< "${InfoSmrt}" | sed -e 's|Logical Unit id:||' -e 's:0x::' -e 's:[[:blank:]]\{1,\}::g')"
+
+		fi
+
+		if [ -z "${lun_list[${drive_lun_id}]}" ]; then
+			lun_list[${drive_lun_id}]="${drive}"
+		fi
+	done
+
+	mapfile -t drives <<<"${lun_list[@]}"
+}
+
 
 #
 # Main Script Starts Here
@@ -2458,7 +2485,7 @@ fi
 
 if [ "${systemType}" = "BSD" ]; then
 	# This sort breaks on linux when going to four leter drive ids: "sdab"; it works fine for bsd's numbered drive ids though.
-	readarray -t "drives" <<< "$(for drive in ${localDriveList}; do
+	readarray -t "drives_dup" <<< "$(for drive in ${localDriveList}; do
 		if [ "${smartctl_vers_74_plus}" = "true" ] && [ "$(smartctl -ji "/dev/${drive}" | jq -Mre '.smart_support.enabled | values')" = "true" ]; then
 			printf "%s\n" "${drive}"
 		elif smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
@@ -2468,7 +2495,7 @@ if [ "${systemType}" = "BSD" ]; then
 		fi
 	done | sort -V | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
 else
-	readarray -t "drives" <<< "$(for drive in ${localDriveList}; do
+	readarray -t "drives_dup" <<< "$(for drive in ${localDriveList}; do
 		if [ "${smartctl_vers_74_plus}" = "true" ] && [ "$(smartctl -ji "/dev/${drive}" | jq -Mre '.smart_support.enabled | values')" = "true" ]; then
 			printf "%s\n" "${drive}"
 		elif smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
@@ -2478,6 +2505,10 @@ else
 		fi
 	done | sort -Vbk 1 -k 2 | cut -d ' ' -f 2 | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
 fi
+
+declare -a drives
+DeDupDrives
+
 
 # Toggles the 'ssdExist' flag to true if SSDs are detected in order to add the summary table
 if [ "${includeSSD}" = "true" ]; then
