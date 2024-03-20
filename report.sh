@@ -2729,7 +2729,7 @@ fi
 
 ### Send report
 if [ ! "${systemSubType}" = "pfSense" ]; then
-	sendmail -ti < "${logfile}"
+	sendmail -t -i < "${logfile}"
 	if [ "${saveLogfile}" = "false" ]; then
 		rm "${logfile}"
 	fi
