@@ -2301,7 +2301,7 @@ function DeDupDrives () {
 		fi
 	done
 
-	mapfile -t drives <<<"${lun_list[@]}"
+	printf '%s\n' "${lun_list[@]}"
 }
 
 
@@ -2493,7 +2493,8 @@ if [ "${systemType}" = "BSD" ]; then
 		elif grep -q "nvme" <<< "${drive}"; then
 			printf "%s\n" "${drive}"
 		fi
-	done | sort -V | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
+	done)"
+	readarray -t drives <<< "$(DeDupDrives | sort -V | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
 else
 	readarray -t "drives_dup" <<< "$(for drive in ${localDriveList}; do
 		if [ "${smartctl_vers_74_plus}" = "true" ] && [ "$(smartctl -ji "/dev/${drive}" | jq -Mre '.smart_support.enabled | values')" = "true" ]; then
@@ -2503,12 +2504,9 @@ else
 		elif grep -q "nvme" <<< "${drive}"; then
 			printf "%s\n" "${#drive} ${drive}"
 		fi
-	done | sort -Vbk 1 -k 2 | cut -d ' ' -f 2 | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
+	done)"
+	readarray -t drives <<< "$(DeDupDrives | sort -Vbk 1 -k 2 | cut -d ' ' -f 2 | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
 fi
-
-declare -a drives
-DeDupDrives
-
 
 # Toggles the 'ssdExist' flag to true if SSDs are detected in order to add the summary table
 if [ "${includeSSD}" = "true" ]; then
