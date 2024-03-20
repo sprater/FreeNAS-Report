@@ -2476,10 +2476,10 @@ fi
 
 # Reorders the drives in ascending order
 if [ "${systemType}" = "BSD" ]; then
-	localDriveList="$(sysctl -n kern.disks | sed -e 's:nvd:nvme:g')"
+	localDriveList="$(sysctl -n kern.disks | sed -e 's:nvd:nvme:g' | sort -V)"
 else
 	# shellcheck disable=SC2010
-	localDriveList="$(ls -l "/sys/block" | grep -v 'devices/virtual' | sed -e 's:[[:blank:]]\{1,\}: :g' | cut -d ' ' -f "9" | sed -e 's:n[0-9]\{1,\}$::g' | uniq )"
+	localDriveList="$(ls -l "/sys/block" | grep -v 'devices/virtual' | sed -e 's:[[:blank:]]\{1,\}: :g' | cut -d ' ' -f "9" | sed -e 's:n[0-9]\{1,\}$::g' | uniq | sort -V)"
 	# lsblk -n -l -o NAME -E PKNAME | tr '\n' ' '
 fi
 
