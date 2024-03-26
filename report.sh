@@ -2512,7 +2512,7 @@ fi
 if [ "${includeSSD}" = "true" ]; then
 	for drive in "${drives[@]}"; do
 		driveTypeExistSmartOutput="$(smartctl -ij "/dev/${drive}")"
-		if [ "$(jq -Mre '.rotation_rate | values' <<< "${driveTypeExistSmartOutput}")" = "0" ] && [ ! "$(jq -Mre '.device.type | values' <<< "${driveTypeExistSmartOutput}")" = "scsi" ]; then
+		if [ "$(jq -Mre '.rotation_rate | values' <<< "${driveTypeExistSmartOutput}")" = "0" ] && [ "$(jq -Mre '.device.protocol | values' <<< "${driveTypeExistSmartOutput}")" = "ATA" ]; then
 			ssdExist="true"
 			break
 		else
@@ -2526,7 +2526,7 @@ fi
 # Test to see if there are any HDDs
 for drive in "${drives[@]}"; do
 	driveTypeExistSmartOutput="$(smartctl -ij "/dev/${drive}")"
-	if [ ! "$(jq -Mre '.rotation_rate | values' <<< "${driveTypeExistSmartOutput}")" = "0" ] && [ ! "$(jq -Mre '.device.type | values' <<< "${driveTypeExistSmartOutput}")" = "scsi" ]; then
+	if [ ! "$(jq -Mre '.rotation_rate | values' <<< "${driveTypeExistSmartOutput}")" = "0" ] && [ "$(jq -Mre '.device.protocol | values' <<< "${driveTypeExistSmartOutput}")" = "ATA" ]; then
 		hddExist="true"
 		break
 	else
@@ -2537,7 +2537,7 @@ done
 if [ "${includeSAS}" = "true" ]; then
 	for drive in "${drives[@]}"; do
 		driveTypeExistSmartOutput="$(smartctl -ij "/dev/${drive}")"
-		if [ "$(jq -Mre '.device.type | values' <<< "${driveTypeExistSmartOutput}")" = "scsi" ]; then
+		if [ "$(jq -Mre '.device.protocol | values' <<< "${driveTypeExistSmartOutput}")" = "SCSI" ]; then
 			sasExist="true"
 			break
 		else
