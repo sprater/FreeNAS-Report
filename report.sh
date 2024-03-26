@@ -2498,7 +2498,7 @@ if [ "${systemType}" = "BSD" ]; then
 else
 	readarray -t "drives_dup" <<< "$(for drive in ${localDriveList}; do
 		if [ "${smartctl_vers_74_plus}" = "true" ] && [ "$(smartctl -ji "/dev/${drive}" | jq -Mre '.smart_support.enabled | values')" = "true" ]; then
-			printf "%s\n" "${drive}"
+			printf "%s\n" "${#drive} ${drive}"
 		elif smartctl -i "/dev/${drive}" | sed -e 's:[[:blank:]]\{1,\}: :g' | grep -q "SMART support is: Enabled"; then
 			printf "%s\n" "${#drive} ${drive}"
 		elif grep -q "nvme" <<< "${drive}"; then
