@@ -2504,8 +2504,8 @@ else
 		elif grep -q "nvme" <<< "${drive}"; then
 			printf "%s\n" "${#drive} ${drive}"
 		fi
-	done)"
-	readarray -t drives <<< "$(DeDupDrives | sort -Vbk 1 -k 2 | cut -d ' ' -f 2 | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
+	done | sort -Vbk 1 -k 2 | cut -d ' ' -f 2)"
+	readarray -t drives <<< "$(DeDupDrives | sed '/^nvme/!H;//p;$!d;g;s:\n::')"
 fi
 
 # Toggles the 'ssdExist' flag to true if SSDs are detected in order to add the summary table
