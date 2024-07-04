@@ -1805,16 +1805,11 @@ EOF
 
 			local device="${drive}"
 
-			# Available if any tests have completed #FixMe this info is not currently exported in json for sas drives
-			if [ ! -z "$(jq -Mre '.ata_smart_self_test_log.extended.table | values' <<< "${sasInfoSmrt}")" ]; then
-				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].lifetime_hours | values' <<< "${sasInfoSmrt}")"
-				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].type.string | values' <<< "${sasInfoSmrt}")"
-				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.extended.table[0].status.passed | values' <<< "${sasInfoSmrt}")"
-			else
-				local lastTestHours="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].lifetime_hours | values' <<< "${sasInfoSmrt}")"
-				local lastTestType="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].type.string | values' <<< "${sasInfoSmrt}")"
-				local lastTestStatus="$(jq -Mre '.ata_smart_self_test_log.standard.table[0].status.passed | values' <<< "${sasInfoSmrt}")"
-			fi
+			# Available if any tests have completed
+			local lastTestHours="$(jq -Mre '.scsi_self_test_0.power_on_time.hours | values' <<< "${sasInfoSmrt}")"
+			local lastTestType="$(jq -Mre '.scsi_self_test_0.code.string | values' <<< "${sasInfoSmrt}")"
+			local lastTestStatus="$(jq -Mre '.scsi_self_test_0.result.string | values' <<< "${sasInfoSmrt}")"
+
 
 			# Try the non json output if we do not have a value
 			if [ -z "${lastTestType}" ]; then
@@ -1854,7 +1849,11 @@ EOF
 				local smartStatus="FAILED"
 			fi
 
-			local model="$(jq -Mre '.model_name | values' <<< "${sasInfoSmrt}")"
+			local model="$(jq -Mre '.scsi_model_name | values' <<< "${sasInfoSmrt}")"
+			if [ -z "${model}" ]; then
+				model="$(jq -Mre '.model_name | values' <<< "${sasInfoSmrt}")"
+			fi
+
 			local serial="$(jq -Mre '.serial_number | values' <<< "${sasInfoSmrt}")"
 			local rpm="$(jq -Mre '.rotation_rate | values' <<< "${sasInfoSmrt}")"
 
@@ -1873,9 +1872,23 @@ EOF
 
 			# Available for most common drives
 			local scsiGrownDefectList="$(jq -Mre '.scsi_grown_defect_list | values' <<< "${sasInfoSmrt}")"
-			local uncorrectedReadErrors="$(jq -Mre '.read.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
-			local uncorrectedWriteErrors="$(jq -Mre '.write.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
-			local uncorrectedVerifyErrors="$(jq -Mre '.verify.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			local uncorrectedReadErrors="$(jq -Mre '.scsi_error_counter_log.read.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			local uncorrectedWriteErrors="$(jq -Mre '.scsi_error_counter_log.write.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			local uncorrectedVerifyErrors="$(jq -Mre '.scsi_error_counter_log.verify.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			local accumStartStopCycles="$(jq -Mre '.scsi_start_stop_cycle_counter.accumulated_start_stop_cycles | values' <<< "${sasInfoSmrt}")"
+			local accumLoadUnloadCycles="$(jq -Mre '.scsi_start_stop_cycle_counter.accumulated_load_unload_cycles | values' <<< "${sasInfoSmrt}")"
+
+
+			# Try the old json format if the new one has no values
+			if [ -z "${uncorrectedReadErrors}" ]; then
+				uncorrectedReadErrors="$(jq -Mre '.read.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			fi
+			if [ -z "${uncorrectedWriteErrors}" ]; then
+				uncorrectedWriteErrors="$(jq -Mre '.write.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			fi
+			if [ -z "${uncorrectedVerifyErrors}" ]; then
+				uncorrectedVerifyErrors="$(jq -Mre '.verify.total_uncorrected_errors | values' <<< "${sasInfoSmrt}")"
+			fi
 
 			# Try the non json output if we do not have a value
 			if [ -z "${uncorrectedReadErrors}" ]; then
@@ -1887,11 +1900,15 @@ EOF
 			if [ -z "${uncorrectedVerifyErrors}" ]; then
 				uncorrectedVerifyErrors="$(grep "verify:" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '8')"
 			fi
+			if [ -z "${accumStartStopCycles}" ]; then
+				accumStartStopCycles="$(grep "Accumulated start-stop" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
+			fi
+			if [ -z "${accumLoadUnloadCycles}" ]; then
+				accumLoadUnloadCycles="$(grep "Accumulated load-unload" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
+			fi
 
 			# FixMe: relies entirely on non-json output
 			local nonMediumErrors="$(grep "Non-medium" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
-			local accumStartStopCycles="$(grep "Accumulated start-stop" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
-			local accumLoadUnloadCycles="$(grep "Accumulated load-unload" <<< "${nonJsonSasInfoSmrt}" | tr -s " " | cut -d ' ' -sf '4')"
 
 
 			## Make override adjustments
