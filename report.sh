@@ -2678,7 +2678,13 @@ for drive in "${drives[@]}"; do
 		# Gather brand and serial number of each drive
 		brand="$(jq -Mre '.model_family | values' <<< "${smartOut}")"
 		if [ -z "${brand}" ]; then
-			brand="$(jq -Mre '.model_name | values' <<< "${smartOut}")";
+			brand="$(jq -Mre '.model_name | values' <<< "${smartOut}")"
+		fi
+		if [ -z "${brand}" ]; then
+			brand="$(jq -Mre '.scsi_vendor | values' <<< "${smartOut}")"
+		fi
+		if [ -z "${brand}" ]; then
+			brand="$(jq -Mre '.scsi_model_name | values' <<< "${smartOut}")"
 		fi
 		serial="$(jq -Mre '.serial_number | values' <<< "${smartOut}")"
 		{
@@ -2687,7 +2693,9 @@ for drive in "${drives[@]}"; do
 			smartctl -H -A -l error "/dev/${drive}"
 			grep 'Num' <<< "${smartTestOut}" | cut -c6- | head -1
 			grep 'Extended' <<< "${smartTestOut}" | cut -c6- | head -1
+			grep 'long' <<< "${smartTestOut}" | cut -c6- | head -1
 			grep 'Short' <<< "${smartTestOut}" | cut -c6- | head -1
+			grep 'short' <<< "${smartTestOut}" | cut -c6- | head -1
 			grep 'Conveyance' <<< "${smartTestOut}" | cut -c6- | head -1
 			echo '<br><br>'
 		} >> "${logfile}"
