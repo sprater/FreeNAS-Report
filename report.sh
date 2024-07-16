@@ -653,6 +653,16 @@ EOF
 				local nvmeSmarOut="$(smartctl -AxHij "/dev/${drive}")"
 			fi
 
+			# Available if any tests have completed
+			local lastTestHours="$(jq -Mre '.nvme_self_test_log.table[0].power_on_hours | values' <<< "${nvmeSmarOut}")"
+			# Warn if drive and smartctl support self tests but there are none
+			if [ -z "${lastTestHours}" ] && [ ! -z "$(jq -Mre '.nvme_self_test_log.current_self_test_operation.value | values' <<< "${nvmeSmarOut}")" ]; then
+				lastTestHours="0"
+			fi
+
+			local lastTestType="$(jq -Mre '.nvme_self_test_log.table[0].self_test_code.string | values' <<< "${nvmeSmarOut}")"
+			local lastTestStatus="$(jq -Mre '.nvme_self_test_log.table[0].self_test_result.value | values' <<< "${nvmeSmarOut}")"
+
 			local model="$(jq -Mre '.model_name | values' <<< "${nvmeSmarOut}")"
 			local serial="$(jq -Mre '.serial_number | values' <<< "${nvmeSmarOut}")"
 			local temp="$(jq -Mre '.temperature.current | values' <<< "${nvmeSmarOut}")"
@@ -732,7 +742,9 @@ EOF
 			local capacity="[${capacityPre}${capacitySufx}]"
 
 			# Get more useful times from hours
-			local testAge="$(bc <<< "(${onHours} - (${onHours} - 2) ) / 24")" # ${lastTestHours}
+			if [ ! -z "${lastTestHours}" ]; then
+				local testAge="$(bc <<< "(${onHours} - ${lastTestHours}) / 24")"
+			fi
 			local yrs="$(bc <<< "${onHours} / 8760")"
 			local mos="$(bc <<< "(${onHours} % 8760) / 730")"
 			local dys="$(bc <<< "((${onHours} % 8760) % 730) / 24")"
@@ -765,6 +777,13 @@ EOF
 				local smartStatusColor="${critColor}"
 			else
 				local smartStatusColor="${okColor}"
+			fi
+
+			# Colorize Smart test Status
+			if [ ! "${lastTestStatus}" = "0" ]; then
+				local lastTestStatusColor="${critColor}"
+			else
+				local lastTestStatusColor="${bgColor}"
 			fi
 
 			# Colorize temp
@@ -886,9 +905,9 @@ EOF
 
 					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${bwPerDay}</td> <!-- bwPerDay -->
 
-					<td style="text-align:center; background-color:${testAgeColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">N/A</td> <!-- testAgeColor, testAge -->
+					<td style="text-align:center; background-color:${testAgeColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${testAge:-"N/A"}</td> <!-- testAgeColor, testAge -->
 
-					<td style="text-align:center; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">N/A</td> <!-- lastTestType -->
+					<td style="text-align:center; background-color:${lastTestStatusColor}; height:25px; border:1px solid black; border-collapse:collapse; font-family:courier;">${lastTestType:-"N/A"}</td> <!-- lastTestType -->
 
 					</tr>
 EOF
@@ -2305,7 +2324,7 @@ function DeDupDrives () {
 		InfoSmrt="$(smartctl -xj "/dev/${drive}")"
 
 		if [ "${smartctl_vers_74_plus}" = "true" ]; then
-			drive_lun_id="$(jq -Mre '.serial_number | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.naa | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.id | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.ext_id | values' <<< "${InfoSmrt}")"
+			drive_lun_id="$(jq -Mre '.serial_number | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.naa | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.wwn.id | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.oui | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_namespaces[0].eui64.ext_id | values' <<< "${InfoSmrt}")$(jq -Mre '.nvme_ieee_oui_identifier | values' <<< "${InfoSmrt}")"
 			# FixMe: need to see if Logical Unit id is in json output
 		else
 			nonJsonSasInfoSmrt="$(smartctl -x "/dev/${drive}")"
@@ -2481,9 +2500,9 @@ messageid="$(dbus-uuidgen)"
 # Get the version numbers for smartctl
 major_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '1p;d')"
 minor_smartctl_vers="$(smartctl -jV | jq -Mre '.smartctl.version[] | values' | sed '2p;d')"
-if [[ "${major_smartctl_vers}" -gt "7" ]]; then
+if [ "${major_smartctl_vers}" -gt "7" ]; then
 	smartctl_vers_74_plus="true"
-elif [[ "${major_smartctl_vers}" -eq "7" ]] && [[ "${minor_smartctl_vers}" -ge "4" ]]; then
+elif [ "${major_smartctl_vers}" -eq "7" ] && [ "${minor_smartctl_vers}" -ge "4" ]; then
 	smartctl_vers_74_plus="true"
 elif [ -z "${major_smartctl_vers}" ]; then
 	echo "smartctl version 7 or greater is required" >&2
@@ -2672,9 +2691,34 @@ done
 ### SMART status for each drive
 for drive in "${drives[@]}"; do
 	smartOut="$(smartctl --json=u -i "/dev/${drive}")"
-	smartTestOut="$(smartctl -l xselftest,selftest "/dev/${drive}" | grep -v 'SMART Extended Self-test')"
 
-	if [ "$(jq -Mre '.smart_support.enabled | values' <<< "${smartOut}")" = "true" ] || grep "SMART support is:" <<< "${smartOut}" | grep -q "Enabled"; then
+	if grep -q "nvme" <<< "${drive}"; then
+		# NVMe drives are handled separately because self tests are not supported with the same commands.
+
+		# Gather brand and serial number of each drive
+		brand="$(jq -Mre '.model_family | values' <<< "${smartOut}")"
+		if [ -z "${brand}" ]; then
+			brand="$(jq -Mre '.model_name | values' <<< "${smartOut}")";
+		fi
+		serial="$(jq -Mre '.serial_number | values' <<< "${smartOut}")"
+		{
+			# Create a simple header and drop the output of some basic smartctl commands
+			echo '<b>########## SMART status report for '"${drive}"' drive ('"${brand}: ${serial}"') ##########</b>'
+			smartctl -H -A -l error "/dev/${drive}"
+
+			if [ "${systemType}" = "BSD" ] && [ ! "${smartctl_vers_74_plus}" = "true" ]; then
+				nvmecontrol logpage -p 0x06 "${drive}" 2> /dev/null | grep '\['
+			else
+				smartTestOut="$(smartctl -l selftest "/dev/${drive}")"
+				grep 'Num' <<< "${smartTestOut}" | grep 'Status' | cut -c6-
+				grep 'Extended' <<< "${smartTestOut}" | cut -c6- | head -1
+				grep 'Short' <<< "${smartTestOut}" | cut -c6- | head -1
+			fi
+			echo '<br><br>'
+		} >> "${logfile}"
+
+	elif [ "$(jq -Mre '.smart_support.enabled | values' <<< "${smartOut}")" = "true" ] || grep "SMART support is:" <<< "${smartOut}" | grep -q "Enabled"; then
+		smartTestOut="$(smartctl -l xselftest,selftest "/dev/${drive}" | grep -v 'SMART Extended Self-test')"
 		# Gather brand and serial number of each drive
 		brand="$(jq -Mre '.model_family | values' <<< "${smartOut}")"
 		if [ -z "${brand}" ]; then
@@ -2697,30 +2741,6 @@ for drive in "${drives[@]}"; do
 			grep 'Short' <<< "${smartTestOut}" | cut -c6- | head -1
 			grep 'short' <<< "${smartTestOut}" | cut -c6- | head -1
 			grep 'Conveyance' <<< "${smartTestOut}" | cut -c6- | head -1
-			echo '<br><br>'
-		} >> "${logfile}"
-
-	elif grep -q "nvme" <<< "${drive}"; then
-		# NVMe drives are handled separately because self tests are not yet supported.
-		# Gather brand and serial number of each drive
-		brand="$(jq -Mre '.model_family | values' <<< "${smartOut}")"
-		if [ -z "${brand}" ]; then
-			brand="$(jq -Mre '.model_name | values' <<< "${smartOut}")";
-		fi
-		serial="$(jq -Mre '.serial_number | values' <<< "${smartOut}")"
-		{
-			# Create a simple header and drop the output of some basic smartctl commands
-			echo '<b>########## SMART status report for '"${drive}"' drive ('"${brand}: ${serial}"') ##########</b>'
-			smartctl -H -A -l error "/dev/${drive}"
-
-			if [ "${systemType}" = "BSD" ] && [ ! "${smartctl_vers_74_plus}" = "true" ]; then
-				nvmecontrol logpage -p 0x06 "${drive}" 2> /dev/null | grep '\['
-			elif [ "${smartctl_vers_74_plus}" = "true" ]; then
-				grep 'Num' <<< "${smartTestOut}" | cut -c6- | head -1
-				grep 'Extended' <<< "${smartTestOut}" | cut -c6- | head -1
-				grep 'Short' <<< "${smartTestOut}" | cut -c6- | head -1
-				grep 'Conveyance' <<< "${smartTestOut}" | cut -c6- | head -1
-			fi
 			echo '<br><br>'
 		} >> "${logfile}"
 	fi
