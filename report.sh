@@ -1061,7 +1061,7 @@ EOF
 				local totalLBA="$(bc <<< "($(jq -Mre '.ata_smart_attributes.table[] | select(.id == 175) | .raw.value | values' <<< "${ssdInfoSmrt}") * (1024^2) / ${sectorSize})")"
 			elif [ "$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 241) | .name | values' <<< "${ssdInfoSmrt}")" = "Total_LBAs_Written" ]; then
 				# Fallback for seagate SSDs that do not have a stats page
-				local totalLBA="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 241)' <<< "${ssdInfoSmrt}")"
+				local totalLBA="$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 241) | .raw.value | values' <<< "${ssdInfoSmrt}")"
 			else
 				local totalLBA="0"
 			fi
