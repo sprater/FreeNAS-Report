@@ -1055,7 +1055,7 @@ EOF
 
 			# Get LBA written from the stats page for data written
 			if [ ! -z "$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "General Statistics") | values' <<< "${ssdInfoSmrt}")" ]; then
-				local totalLBA="$(jq -Mre '.ata_device_statistics.pages[]? | select(.name == "General Statistics") | .table[] | select(.name == "Logical Sectors Written") | .value | values' <<< "${ssdInfoSmrt}")"
+				local totalLBA="$(jq -Mre '.ata_device_statistics.pages[0]? | select(.name == "General Statistics") | .table[] | select(.name == "Logical Sectors Written") | .value | values' <<< "${ssdInfoSmrt}")"
 			elif [ "$(jq -Mre '.ata_smart_attributes.table[] | select(.id == 175) | .name | values' <<< "${ssdInfoSmrt}")" = "Host_Writes_MiB" ]; then
 				# Fallback for apple SSDs that do not have a stats page
 				local totalLBA="$(bc <<< "($(jq -Mre '.ata_smart_attributes.table[] | select(.id == 175) | .raw.value | values' <<< "${ssdInfoSmrt}") * (1024^2) / ${sectorSize})")"
