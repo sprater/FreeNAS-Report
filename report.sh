@@ -2378,6 +2378,11 @@ if [[ "$(uname -mrs)" =~ .*"BSD".* ]]; then
 	if [ "$(cat "/etc/platform" 2> /dev/null)" = "pfSense" ]; then
 		systemSubType="pfSense"
 	fi
+else
+	scaleVers="$(cat /etc/version)"
+	if [[ "${scaleVers}" > "24.10.0.2" ]]; then
+		sendMailGone="1"
+	fi
 fi
 
 # Check if needed software is installed.
@@ -2412,6 +2417,10 @@ sysctl
 glabel
 nvmecontrol
 )
+elif [ "${sendMailGone}" = "1" ]; then
+commands+=(
+multireport_sendemail.py
+)
 fi
 if [ "${configBackup}" = "true" ]; then
 commands+=(
@@ -2443,6 +2452,9 @@ for command in "${commands[@]}"; do
 		echo "${command} is missing, please install" >&2
 		if [ "${command}" = "bc" ]; then
 			echo "If you are on scale see https://ixsystems.atlassian.net/browse/NAS-115175 and https://github.com/dak180/FreeNAS-Report/pull/6#issuecomment-1422618352 for updates on when bc will be included in scale and how to add it in the meantime (this will need to be redone each upgrade or you could put it in: $(dirname "${configFile}")/usr/bin/)." >&2
+		fi
+		if [ "${command}" = "multireport_sendemail.py" ]; then
+			echo "Please download from https://github.com/oxyde1989/standalone-tn-send-email and place in $(dirname "${configFile}")/usr/bin/)." >&2
 		fi
 		exit 100
 	fi
@@ -2774,7 +2786,12 @@ fi
 
 ### Send report
 if [ ! "${systemSubType}" = "pfSense" ]; then
-	sendmail -t -i < "${logfile}"
+	if [ "${sendMailGone}" = "1" ]; then
+		base64 -w 0 < "${logfile}" | python3 multireport_sendemail.py --bulk_email
+	else
+		sendmail -t -i < "${logfile}"
+	fi
+
 	if [ "${saveLogfile}" = "false" ]; then
 		rm "${logfile}"
 	fi
