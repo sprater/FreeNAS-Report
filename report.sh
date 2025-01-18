@@ -2454,7 +2454,7 @@ for command in "${commands[@]}"; do
 			echo "If you are on scale see https://ixsystems.atlassian.net/browse/NAS-115175 and https://github.com/dak180/FreeNAS-Report/pull/6#issuecomment-1422618352 for updates on when bc will be included in scale and how to add it in the meantime (this will need to be redone each upgrade or you could put it in: $(dirname "${configFile}")/usr/bin/)." >&2
 		fi
 		if [ "${command}" = "multireport_sendemail.py" ]; then
-			echo "Please download from https://github.com/oxyde1989/standalone-tn-send-email and place in $(dirname "${configFile}")/usr/bin/)." >&2
+			echo "Please download from https://github.com/oxyde1989/standalone-tn-send-email/releases/latest and place in $(dirname "${configFile}")/usr/bin/)." >&2
 		fi
 		exit 100
 	fi
@@ -2787,7 +2787,7 @@ fi
 ### Send report
 if [ ! "${systemSubType}" = "pfSense" ]; then
 	if [ "${sendMailGone}" = "1" ]; then
-		base64 -w 0 < "${logfile}" | python3 multireport_sendemail.py --bulk_email
+		python3 multireport_sendemail.py --bulk_email "$(base64 -w 0 < "${logfile}")"
 	else
 		sendmail -t -i < "${logfile}"
 	fi
