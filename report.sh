@@ -2271,6 +2271,9 @@ function DumpFiles () {
 	# Dump smartctl version
 	smartctl -jV > "${dumpPath}smartctl_vers.txt"
 
+	# Dump the TrueNAS version
+	cp "/etc/version" "${dumpPath}"
+
 	# Dump drive data
 	{
 		for drive in "${drives[@]}"; do
