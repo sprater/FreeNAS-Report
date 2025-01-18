@@ -2787,14 +2787,14 @@ fi
 ### Send report
 if [ ! "${systemSubType}" = "pfSense" ]; then
 	if [ "${sendMailGone}" = "1" ]; then
-		b64="$(base64 -w 0 < "${logfile}")"
-		python3 multireport_sendemail.py --bulk_email "${b64}"
+		base64 -w 0 < "${logfile}" > "${logfile}.64"
+		python3 multireport_sendemail.py --bulk_email "${logfile}.64"
 	else
 		sendmail -t -i < "${logfile}"
 	fi
 
 	if [ "${saveLogfile}" = "false" ]; then
-		rm "${logfile}"
+		rm "${logfile}" "${logfile}.64"
 	fi
 else
 	chmod 666 "${logfile}"
