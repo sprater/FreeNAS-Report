@@ -2454,7 +2454,7 @@ for command in "${commands[@]}"; do
 		fi
 		echo "${command} is missing, please install" >&2
 		if [ "${command}" = "bc" ]; then
-			echo "If you are on scale see https://ixsystems.atlassian.net/browse/NAS-115175 and https://github.com/dak180/FreeNAS-Report/pull/6#issuecomment-1422618352 for updates on when bc will be included in scale and how to add it in the meantime (this will need to be redone each upgrade or you could put it in: $(dirname "${configFile}")/usr/bin/)." >&2
+			echo "If you are on scale see https://forums.truenas.com/t/include-bc-in-scale/8933 and https://github.com/dak180/FreeNAS-Report/pull/6#issuecomment-1422618352 for updates on when bc will be included in scale and how to add it in the meantime (this will need to be redone each upgrade or you could put it in: $(dirname "${configFile}")/usr/bin/)." >&2
 		fi
 		if [ "${command}" = "multireport_sendemail.py" ]; then
 			echo "Please download from https://github.com/oxyde1989/standalone-tn-send-email/releases/latest and place in $(dirname "${configFile}")/usr/bin/)." >&2
