@@ -2457,6 +2457,10 @@ for command in "${commands[@]}"; do
 			echo "Please download from https://github.com/oxyde1989/standalone-tn-send-email/releases/latest and place in $(dirname "${configFile}")/usr/bin/)." >&2
 		fi
 		exit 100
+	else
+		if [ "${command}" = "multireport_sendemail.py" ] && [ ! -x "$(type -P multireport_sendemail.py)" ]; then
+			chmod +x "$(type -P multireport_sendemail.py)"
+		fi
 	fi
 done
 
@@ -2788,7 +2792,7 @@ fi
 if [ ! "${systemSubType}" = "pfSense" ]; then
 	if [ "${sendMailGone}" = "1" ]; then
 		base64 -w 0 < "${logfile}" > "${logfile}.64"
-		python3 multireport_sendemail.py --mail_bulk "${logfile}.64"
+		multireport_sendemail.py --mail_bulk "${logfile}.64"
 	else
 		sendmail -t -i < "${logfile}"
 	fi
