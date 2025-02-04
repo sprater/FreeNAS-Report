@@ -124,6 +124,7 @@ configBackup="false"			# Change to "false" to skip config backup (which renders 
 emailBackup="false"				# Change to "true" to email TrueNAS config backup
 saveBackup="true"				# Change to "false" to delete TrueNAS config backup after mail is sent; "true" to keep it in dir below
 backupLocation="/root/backup"	# Directory in which to save TrueNAS config backups
+keepBackups=0			# Number of config backups to keep.  Set to 0 to never delete.
 
 ### UPS status summary settings
 reportUPS="false"			# Change to "false" to skip reporting the status of the UPS
@@ -257,6 +258,9 @@ EOF
 				mkdir -p "${backupLocation}/"
 			fi
 			cp "${tarfile}" "${backupLocation}/${filename}.tar.gz"
+			if [ $keepBackups -gt 0 ]; then
+				ls -t ${backupLocation}/*.tar.gz 2>/dev/null | tail +$((keepBackups+1)) | xargs -r rm
+			fi
 		fi
 		rm "${tarfile}"
 		rm /tmp/report/*
