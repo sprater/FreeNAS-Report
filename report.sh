@@ -258,7 +258,7 @@ EOF
 				mkdir -p "${backupLocation}/"
 			fi
 			cp "${tarfile}" "${backupLocation}/${filename}.tar.gz"
-			if [ $keepBackups -gt 0 ]; then
+			if [ "$keepBackups" -gt 0 ]; then
 				ls -t ${backupLocation}/*.tar.gz 2>/dev/null | tail +$((keepBackups+1)) | xargs -r rm
 			fi
 		fi
