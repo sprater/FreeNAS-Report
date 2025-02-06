@@ -129,6 +129,9 @@ keepBackups=0			# Number of config backups to keep.  Set to 0 to never delete.
 ### UPS status summary settings
 reportUPS="false"			# Change to "false" to skip reporting the status of the UPS
 
+### NTP status summary settings
+reportNTP="false"			# Change to "false" to skip reporting the status of the NTP time daemon
+
 ### General script settings
 logfileLocation="/tmp"		# Directory in which to save TrueNAS log file. Can be set to /tmp.
 logfileName="logfilename"	# Log file name
@@ -161,7 +164,7 @@ function ConfigBackup () {
 	else
 		fnconfigdest_date="$(date -d "@${runDate}" '+%Y%m%d%H%M%S')"
 	fi
-	filename="${fnconfigdest_date}_${fnconfigdest_version}"
+	filename="$(basename -s .tar.gz ${tarfile})-${fnconfigdest_date}_${fnconfigdest_version}"
 	###
 	if [ ! -d "/tmp/report/" ]; then
 		mkdir -p "/tmp/report/"
@@ -2252,6 +2255,60 @@ function ReportUPS () {
 	echo '<br><br>' >> "${logfile}"
 }
 
+function ReportNTP () {
+	local ntpservers
+	local server
+
+	# Get the list of all the configured NTP servers
+	readarray -t ntpservers < <(midclt call system.ntpserver.peers | jq -c '.[]')
+
+	{
+		echo '<b>########## NTP status report ##########</b>'
+		for server in "${ntpservers[@]}"; do 
+			echo ""
+			local mode="$(echo "$server" | jq -Mre '.mode')"
+			local state="$(echo "$server" | jq -Mre '.state')"
+			local remote="$(echo "$server" | jq -Mre '.remote')"
+			local stratum="$(echo "$server" | jq -Mre '.stratum')"
+			local poll_interval="$(echo "$server" | jq -Mre '.poll_interval')"
+			local reach="$(echo "$server" | jq -Mre '.reach')"
+			local lastrx="$(echo "$server" | jq -Mre '.lastrx')"
+			local offset="$(echo "$server" | jq -Mre '.offset')"
+			local offset_measured="$(echo "$server" | jq -Mre '.offset_measured')"
+			local jitter="$(echo "$server" | jq -Mre '.jitter')"
+			local active="$(echo "$server" | jq -Mre '.active')"
+
+			local dname="$(nslookup "${remote}" | grep 'name = ' | sed 's/.*name = //' | sed 's/\.$//')"
+                        if [ "X${dname}" == "X" ]; then
+				dname="${remote}"
+			fi
+			echo "Remote timeserver: ${dname}"
+			echo "Active: ${active}"
+			echo "State: ${state}"
+			echo "Mode: ${mode}"
+			echo "Stratum: ${stratum}"
+			if [ "${poll_interval}" -gt 0 ]; then
+				local interval=$(bc <<< "2^${poll_interval}")
+				echo "Poll interval: ${poll_interval} ($(date -u -d@${interval} '+%Mm %Ss'))"
+			fi
+			if [ "${lastrx}" -gt 0 ]; then
+				echo "Last sample received: $(date -u -d@${lastrx} '+%Hh %Mm %Ss')"
+			fi
+			if [ "${reach}" -gt 0 ]; then
+				echo "Reachability: OK"
+			else
+				echo "Reachability: ERROR"
+			fi
+			printf "Source offset: %.9f secs\n" "${offset}"
+			printf "Measured offset: %.9f secs\n" "${offset_measured}"
+			printf "Jitter: %.9f secs\n" "${jitter}"
+		done
+
+	} >> "${logfile}"
+
+	echo '<br><br>' >> "${logfile}"
+}
+
 function DumpFiles () {
 	local filename="dumpfiles"
 	local dumpPath="/tmp/${filename}/"
@@ -2444,6 +2501,12 @@ fi
 if [ "${reportUPS}" = "true" ]; then
 commands+=(
 upsc
+)
+fi
+if [ "${reportNTP}" = "true" ]; then
+commands+=(
+midclt
+nslookup
 )
 fi
 for command in "${commands[@]}"; do
@@ -2687,6 +2750,11 @@ echo '<pre style="font-size:14px">' >> "${logfile}"
 ### UPS status report
 if [ "${reportUPS}" = "true" ]; then
 	ReportUPS
+fi
+
+### NTP status report
+if [ "${reportNTP}" = "true" ]; then
+	ReportNTP
 fi
 
 
